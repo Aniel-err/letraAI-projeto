@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "postgres",  
-    "password": "BD2027.2p.ifma.2025", 
+    "password": null, 
     "database": "letral_db", 
     "host": "localhost",
     "dialect": "postgres"  
