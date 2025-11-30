@@ -1,9 +1,3 @@
-Aqui está o **README.md** atualizado, refletindo todas as mudanças recentes: a validação por domínio institucional (`@ifma` e `@acad`), o sistema de verificação de e-mail (com fallback no terminal), o upload via modal e a nova arquitetura do projeto.
-
-Pode copiar e colar no arquivo `README.md` da raiz do seu projeto.
-
------
-
 # 📝 LetraAi - Plataforma de Gestão e Correção de Redações
 
 > **LetraAi** é uma aplicação web Fullstack desenvolvida para modernizar o fluxo de entrega e correção de redações no ambiente acadêmico. O sistema conecta professores e alunos com segurança, validação institucional e feedback detalhado por competências.
