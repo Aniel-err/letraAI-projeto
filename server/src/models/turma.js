@@ -1,25 +1,17 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
-  class Turma extends Model {
-  static associate(models) {
-    Turma.belongsTo(models.User, { 
-      foreignKey: 'professorId',
-      as: 'Professor'
-    });
+import {Model} from 'sequelize';
 
-    Turma.hasMany(models.User, {
-      foreignKey: 'turmaId' 
-    });
-  }
+export default (sequelize, DataTypes) => {
+  class Turma extends Model {
+    static associate(models) {
+      Turma.belongsTo(models.User, { foreignKey: 'professorId', as: 'Professor' });
+      Turma.hasMany(models.User, { foreignKey: 'turmaId' });
+    }
   }
   Turma.init({
-    nome: DataTypes.STRING
+    nome: DataTypes.STRING,
   }, {
     sequelize,
-    modelName: 'Turma',
+    modelName: 'Turma'
   });
   return Turma;
-};
+}  

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api'; 
 import { Container, Card, Form, Button, Alert, ListGroup, Spinner, Row, Col } from 'react-bootstrap';
 
 function TurmaDetalhes() {
@@ -18,7 +18,7 @@ function TurmaDetalhes() {
   const fetchTurmaDetalhes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3001/api/turmas/${id}`);
+      const response = await api.get(`/turmas/${id}`); 
       setTurma(response.data);
       setError('');
     } catch (err) {
@@ -43,7 +43,7 @@ function TurmaDetalhes() {
     }
 
     try {
-      const response = await axios.post(`http://localhost:3001/api/turmas/${id}/alunos`, { emailAluno });
+      const response = await api.post(`/turmas/${id}/alunos`, { emailAluno }); 
       setFormMessage(response.data.message);
       setEmailAluno(''); 
       fetchTurmaDetalhes(); 
@@ -58,7 +58,7 @@ function TurmaDetalhes() {
         setFormError('');
         setFormMessage('');
         
-        const response = await axios.delete(`http://localhost:3001/api/turmas/${id}/alunos/${alunoId}`);
+        const response = await api.delete(`/turmas/${id}/alunos/${alunoId}`);
         
         setFormMessage(response.data.message); 
         fetchTurmaDetalhes(); 
@@ -88,20 +88,13 @@ function TurmaDetalhes() {
               <Card.Header><h4>Alunos na Turma: {turma.nome}</h4></Card.Header>
               <Card.Body>
                 <ListGroup variant="flush">
-                  {turma.Alunos.length > 0 ? (
+                  {turma.Alunos && turma.Alunos.length > 0 ? (
                     turma.Alunos.map(aluno => (
                       <ListGroup.Item key={aluno.id} className="d-flex justify-content-between align-items-center">
                         {aluno.nome}
-                        
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm"
-                          onClick={() => handleRemoveAluno(aluno.id)}
-                        >
+                        <Button variant="outline-danger" size="sm" onClick={() => handleRemoveAluno(aluno.id)}>
                           &#x1F5D1; Remover 
                         </Button>
-
-                        
                       </ListGroup.Item>
                     ))
                   ) : (
@@ -126,10 +119,7 @@ function TurmaDetalhes() {
                       onChange={(e) => setEmailAluno(e.target.value)}
                     />
                   </Form.Group>
-
-                  <Button variant="primary" type="submit" className="w-100">
-                    Adicionar
-                  </Button>
+                  <Button variant="primary" type="submit" className="w-100">Adicionar</Button>
                 </Form>
               </Card.Body>
             </Card>

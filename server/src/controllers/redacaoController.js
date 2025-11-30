@@ -1,6 +1,7 @@
-const { Redacao, User, Turma } = require('../models');
+import db from '../models/index.js';
+const { Redacao, User, Turma } = db;
 
-exports.uploadRedacao = async (req, res) => {
+export const uploadRedacao = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Nenhum arquivo de imagem enviado.' });
@@ -24,14 +25,13 @@ exports.uploadRedacao = async (req, res) => {
       message: 'Redação enviada com sucesso!',
       redacao: novaRedacao
     });
-
   } catch (error) {
     console.error('Erro no upload:', error);
     res.status(500).json({ message: 'Erro ao enviar redação.', error: error.message });
   }
 };
 
-exports.getRedacoes = async (req, res) => {
+export const getRedacoes = async (req, res) => {
   try {
     const userRole = req.userData.role;
     const userId = req.userData.id;
@@ -47,21 +47,19 @@ exports.getRedacoes = async (req, res) => {
       order: [['createdAt', 'DESC']]
     };
 
-   
     if (userRole === 'aluno') {
       queryOptions.where = { userId: userId };
     }
 
     const redacoes = await Redacao.findAll(queryOptions);
     res.status(200).json(redacoes);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao buscar redações.', error: error.message });
   }
 };
 
-exports.getRedacaoById = async (req, res) => {
+export const getRedacaoById = async (req, res) => {
   try {
     const { id } = req.params;
     const userRole = req.userData.role;
@@ -81,14 +79,13 @@ exports.getRedacaoById = async (req, res) => {
     }
 
     res.status(200).json(redacao);
-
   } catch (error) {
     console.error('Erro ao buscar redação:', error);
     res.status(500).json({ message: 'Erro ao buscar redação.', error: error.message });
   }
 };
 
-exports.corrigirRedacao = async (req, res) => {
+export const corrigirRedacao = async (req, res) => {
   try {
     if (req.userData.role !== 'professor') {
       return res.status(403).json({ message: 'Acesso negado. Apenas professores podem corrigir.' });
@@ -115,7 +112,6 @@ exports.corrigirRedacao = async (req, res) => {
     await redacao.save();
 
     res.status(200).json({ message: 'Correção salva com sucesso!', redacao });
-
   } catch (error) {
     console.error('Erro ao salvar correção:', error);
     res.status(500).json({ message: 'Erro ao salvar correção.', error: error.message });

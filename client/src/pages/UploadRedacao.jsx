@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import api from '../services/api'; 
 import { Container, Form, Button, Alert, Card, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 function UploadRedacao() {
   const [tema, setTema] = useState('');
-  const [file, setFile] = useState(null); 
+  const [file, setFile] = useState(null);
   
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { token } = useAuth(); 
   const navigate = useNavigate(); 
 
   const handleFileChange = (e) => {
@@ -22,7 +19,6 @@ function UploadRedacao() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setMessage('');
 
     if (!file) {
       setError('Por favor, selecione um arquivo de imagem.');
@@ -36,22 +32,14 @@ function UploadRedacao() {
     formData.append('imagem', file); 
 
     try {
-      const response = await axios.post(
-        'http://localhost:3001/api/redacoes/upload', 
-        formData, 
-        {
+      await api.post('/redacoes/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data', 
-            'Authorization': `Bearer ${token}` 
           }
-        }
-      );
+      });
 
-      setLoading(false);
-      setMessage(response.data.message);
       
-      setTema('');
-      setFile(null);
+      navigate('/dashboard');
       
     } catch (err) {
       setLoading(false);
@@ -99,14 +87,16 @@ function UploadRedacao() {
               />
             </Form.Group>
             
-            {message && <Alert variant="success">{message}</Alert>}
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Button variant="primary" type="submit" className="w-100" disabled={loading}>
               {loading ? (
-                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                <>
+                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                  Enviando...
+                </>
               ) : (
-                'Enviar'
+                'Enviar Redação'
               )}
             </Button>
           </Form>

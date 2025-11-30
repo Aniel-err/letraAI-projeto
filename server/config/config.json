@@ -1,23 +1,23 @@
 {
   "development": {
-    "username": "postgres",
-    "password": null,
-    "database": "letral_db",
-    "host": "127.0.0.1",
-    "dialect": "postgres"
+    "username": "postgres",  
+    "password": "BD2027.2p.ifma.2025", 
+    "database": "letral_db", 
+    "host": "localhost",
+    "dialect": "postgres"  
   },
   "test": {
-    "username": "postgres",
+    "username": "root",
     "password": null,
-    "database": "letral_test",
+    "database": "database_test",
     "host": "127.0.0.1",
-    "dialect": "postgres"
+    "dialect": "mysql"
   },
   "production": {
-    "username": "postgres",
+    "username": "root",
     "password": null,
-    "database": "letral_prod",
+    "database": "database_production",
     "host": "127.0.0.1",
-    "dialect": "postgres"
+    "dialect": "mysql"
   }
 }

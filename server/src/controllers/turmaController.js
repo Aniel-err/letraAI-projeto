@@ -1,6 +1,7 @@
-const { Turma, User } = require('../models');
+import db from '../models/index.js';
+const { Turma, User } = db;
 
-exports.createTurma = async (req, res) => {
+export const createTurma = async (req, res) => {
   if (req.userData.role !== 'professor') {
     return res.status(403).json({ message: 'Acesso negado. Apenas professores podem criar turmas.' });
   }
@@ -17,7 +18,6 @@ exports.createTurma = async (req, res) => {
     if (turmaExistente) {
       return res.status(409).json({ message: 'Já existe uma turma com este nome no sistema.' });
     }
-    // ----------------------------------------------------------------
 
     const novaTurma = await Turma.create({
       nome,
@@ -31,7 +31,7 @@ exports.createTurma = async (req, res) => {
   }
 };
 
-exports.getMinhasTurmas = async (req, res) => {
+export const getMinhasTurmas = async (req, res) => {
   try {
     const userId = req.userData.id;
     const userRole = req.userData.role;
@@ -54,16 +54,14 @@ exports.getMinhasTurmas = async (req, res) => {
         turmas = [aluno.Turma];
       }
     }
-
     res.status(200).json(turmas);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao buscar turmas.', error: error.message });
   }
 };
 
-exports.addAlunoToTurma = async (req, res) => {
+export const addAlunoToTurma = async (req, res) => {
   if (req.userData.role !== 'professor') {
     return res.status(403).json({ message: 'Acesso negado.' });
   }
@@ -94,13 +92,12 @@ exports.addAlunoToTurma = async (req, res) => {
 
     res.status(200).json({ message: `Aluno ${aluno.nome} adicionado à turma ${turma.nome}.` });
 
-  } catch (error)
-  {
+  } catch (error) {
     res.status(500).json({ message: 'Erro ao adicionar aluno.', error: error.message });
   }
 };
 
-exports.getTurmaById = async (req, res) => {
+export const getTurmaById = async (req, res) => {
   if (req.userData.role !== 'professor') {
     return res.status(403).json({ message: 'Acesso negado.' });
   }
@@ -108,10 +105,10 @@ exports.getTurmaById = async (req, res) => {
     const { id } = req.params;
 
     const turma = await Turma.findOne({
-      where: { id: id }, 
+      where: { id: id },
       include: [{
         model: User,
-        attributes: ['id', 'nome', 'email'] 
+        attributes: ['id', 'nome', 'email']
       }]
     });
 
@@ -130,28 +127,22 @@ exports.getTurmaById = async (req, res) => {
   }
 };
 
-exports.removeAlunoFromTurma = async (req, res) => {
+export const removeAlunoFromTurma = async (req, res) => {
   if (req.userData.role !== 'professor') {
     return res.status(403).json({ message: 'Acesso negado.' });
   }
   try {
     const { turmaId, alunoId } = req.params;
-
     const turma = await Turma.findByPk(turmaId);
-    if (!turma) {
-      return res.status(404).json({ message: 'Turma não encontrada.' });
-    }
+    if (!turma) return res.status(404).json({ message: 'Turma não encontrada.' });
 
     const aluno = await User.findByPk(alunoId);
-    if (!aluno) {
-      return res.status(404).json({ message: 'Aluno não encontrado.' });
-    }
+    if (!aluno) return res.status(404).json({ message: 'Aluno não encontrado.' });
 
     aluno.turmaId = null;
     await aluno.save();
 
     res.status(200).json({ message: 'Aluno removido da turma com sucesso.' });
-
   } catch (error) {
     res.status(500).json({ message: 'Erro ao remover aluno.', error: error.message });
   }

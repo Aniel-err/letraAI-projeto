@@ -1,15 +1,12 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function ProtectedRoute() {
-  const { token } = useAuth(); 
+const ProtectedRoute = () => {
+  const { user } = useAuth();
 
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
-
-  return <Outlet />;
-}
+  // Se tem usuário, mostra a rota (Outlet). Se não, manda pro Login.
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
+};
 
 export default ProtectedRoute;

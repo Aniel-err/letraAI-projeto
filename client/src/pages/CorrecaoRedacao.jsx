@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api'; // Correção
 import { useAuth } from '../context/AuthContext';
-import { Container, Row, Col, Card, Form, ListGroup, Button, Image, Spinner, Alert, Badge, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Image, Spinner, Alert, Badge, InputGroup } from 'react-bootstrap';
 
 const niveisCompetencia = [
   { label: "Nível 0: 0 pontos (Desconhecimento total)", value: 0 },
@@ -39,11 +39,12 @@ function CorrecaoRedacao() {
   const [descricoes, setDescricoes] = useState([]); 
   
   const isProfessor = user?.role === 'professor';
+
   useEffect(() => {
     const fetchRedacao = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:3001/api/redacoes/${id}`);
+        const response = await api.get(`/redacoes/${id}`); 
         const data = response.data;
         setRedacao(data);
         
@@ -55,7 +56,6 @@ function CorrecaoRedacao() {
           c5: data.notaC5 || 0,
         });
         setItensAnulatorios(data.itensAnulatorios || []);
-        
         setDescricoes(data.descricoes ? data.descricoes.map((texto, index) => ({ id: index, texto })) : []);
         
       } catch (err) {
@@ -72,7 +72,6 @@ function CorrecaoRedacao() {
     setTotal(novoTotal);
   }, [notas]);
 
-  
   const handleNotaChange = (competencia, valor) => {
     const novaNota = parseInt(valor, 10);
     setNotas(prev => ({ ...prev, [competencia]: novaNota }));
@@ -89,9 +88,7 @@ function CorrecaoRedacao() {
   };
 
   const handleDescricaoChange = (id, novoTexto) => {
-    setDescricoes(prev => 
-      prev.map(d => d.id === id ? { ...d, texto: novoTexto } : d)
-    );
+    setDescricoes(prev => prev.map(d => d.id === id ? { ...d, texto: novoTexto } : d));
   };
 
   const handleRemoverDescricao = (id) => {
@@ -100,20 +97,12 @@ function CorrecaoRedacao() {
   
   const handleSalvarCorrecao = async () => {
     setIsSaving(true);
-    
-    const correcaoData = { 
-      notas, 
-      total, 
-      itensAnulatorios, 
-      descricoes: descricoes.map(d => d.texto) 
-    };
+    const correcaoData = { notas, total, itensAnulatorios, descricoes: descricoes.map(d => d.texto) };
     
     try {
-      await axios.put(`http://localhost:3001/api/redacoes/${id}/corrigir`, correcaoData);
-      
+      await api.put(`/redacoes/${id}/corrigir`, correcaoData); 
       alert('Correção salva com sucesso!');
       navigate('/dashboard'); 
-      
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao salvar correção.');
     } finally {
@@ -139,13 +128,13 @@ function CorrecaoRedacao() {
         <Col md={7}>
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>Redação de: {redacao.User.nome} (Tema: {redacao.tema})</span>
+              <span>Redação de: {redacao.User?.nome} (Tema: {redacao.tema})</span>
               <Badge bg={itensAnulatorios.length > 0 ? "danger" : "primary"} pill>
                 Pontuação Total: {itensAnulatorios.length > 0 ? 0 : total} / 1000
               </Badge>
             </Card.Header>
             <Card.Body style={{ height: '80vh', overflow: 'auto' }}>
-              <Image src={redacao.imagemUrl} fluid />
+              {redacao.imagemUrl && <Image src={redacao.imagemUrl} fluid />}
             </Card.Body>
           </Card>
         </Col>
@@ -173,14 +162,7 @@ function CorrecaoRedacao() {
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
               Descrições
-              <Button 
-                variant="primary" 
-                size="sm" 
-                disabled={!isProfessor}
-                onClick={handleAdicionarDescricao}
-              >
-                + Adicionar
-              </Button>
+              <Button variant="primary" size="sm" disabled={!isProfessor} onClick={handleAdicionarDescricao}>+ Adicionar</Button>
             </Card.Header>
             <Card.Body>
               {descricoes.length === 0 ? (
@@ -196,13 +178,7 @@ function CorrecaoRedacao() {
                       disabled={!isProfessor}
                       onChange={(e) => handleDescricaoChange(desc.id, e.target.value)}
                     />
-                    <Button 
-                      variant="outline-danger" 
-                      disabled={!isProfessor}
-                      onClick={() => handleRemoverDescricao(desc.id)}
-                    >
-                      &#x1F5D1;
-                    </Button>
+                    <Button variant="outline-danger" disabled={!isProfessor} onClick={() => handleRemoverDescricao(desc.id)}>&#x1F5D1;</Button>
                   </InputGroup>
                 ))
               )}
@@ -251,12 +227,7 @@ function CorrecaoRedacao() {
             
             {isProfessor && (
               <Card.Footer className="text-end">
-                <Button 
-                  variant="success" 
-                  size="lg" 
-                  onClick={handleSalvarCorrecao}
-                  disabled={isSaving}
-                >
+                <Button variant="success" size="lg" onClick={handleSalvarCorrecao} disabled={isSaving}>
                   {isSaving ? <Spinner as="span" animation="border" size="sm" /> : 'Salvar Correção'}
                 </Button>
               </Card.Footer>

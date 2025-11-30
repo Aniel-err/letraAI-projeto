@@ -1,8 +1,8 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import authMiddleware from '../middlewares/authMiddleware.js';
+import * as turmaController from '../controllers/turmaController.js';
 
-const authMiddleware = require('../middlewares/authMiddleware');
-const turmaController = require('../controllers/turmaController');
+const router = express.Router();
 
 router.use(authMiddleware);
 
@@ -13,4 +13,4 @@ router.get('/:id', turmaController.getTurmaById);
 router.post('/:turmaId/alunos', turmaController.addAlunoToTurma);
 router.delete('/:turmaId/alunos/:alunoId', turmaController.removeAlunoFromTurma);
 
-module.exports = router;
+export default router;

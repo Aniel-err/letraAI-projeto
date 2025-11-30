@@ -1,35 +1,38 @@
-'use strict';
+import Sequelize from 'sequelize';
+import process from 'process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from "module";
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
+import userModel from './user.js';
+import turmaModel from './turma.js';
+import redacaoModel from './redacao.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const require = createRequire(import.meta.url);
+const config = require('../../config/config.json');
+
 const env = process.env.NODE_ENV || 'development';
-const config = require('../../config/config.json')[env];
+const dbConfig = config[env];
 const db = {};
 
 let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+if (dbConfig.use_env_variable) {
+  sequelize = new Sequelize(process.env[dbConfig.use_env_variable], dbConfig);
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
 }
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+const User = userModel(sequelize, Sequelize.DataTypes);
+const Turma = turmaModel(sequelize, Sequelize.DataTypes);
+const Redacao = redacaoModel(sequelize, Sequelize.DataTypes);
+
+db.User = User;
+db.Turma = Turma;
+db.Redacao = Redacao;
+
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
@@ -40,4 +43,4 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db;
+export default db;

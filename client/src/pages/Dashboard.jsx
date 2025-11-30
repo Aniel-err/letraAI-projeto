@@ -1,167 +1,157 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Container, Button, Card, Alert, ListGroup, Spinner, Badge } from 'react-bootstrap';
+import { Container, Button, Card, Alert, ListGroup, Spinner, Badge, Modal, Form } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [redacoes, setRedacoes] = useState([]);
-  const [minhasTurmas, setMinhasTurmas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [showUpload, setShowUpload] = useState(false);
+  const [tema, setTema] = useState('');
+  const [file, setFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
+
   useEffect(() => {
-    if (user) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const resRedacoes = await axios.get('http://localhost:3001/api/redacoes/');
-          setRedacoes(resRedacoes.data);
+    const fetchData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const resRedacoes = await api.get('/redacoes/');
+        setRedacoes(resRedacoes.data);
+        setError('');
+      } catch (err) {
+        console.error("Erro ao buscar dados:", err);
+        if(err.response && err.response.status === 401) logout();
+        setError('Não foi possível carregar as informações.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          if (user.role === 'aluno') {
-            const resTurmas = await axios.get('http://localhost:3001/api/turmas/');
-            setMinhasTurmas(resTurmas.data);
-          }
+    fetchData();
+  }, [user, logout]);
 
-          setError('');
-        } catch (err) {
-          setError(err.response?.data?.message || 'Erro ao buscar dados.');
-        } finally {
-          setLoading(false);
-        }
-      };
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!file) return;
+    setUploadLoading(true);
+    setUploadMsg('');
 
-      fetchData();
+    const formData = new FormData();
+    formData.append('tema', tema);
+    formData.append('imagem', file);
+
+    try {
+      await api.post('/redacoes/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      
+      setUploadMsg('Sucesso!');
+      setTema('');
+      setFile(null);
+      setShowUpload(false);
+      
+      const res = await api.get('/redacoes/');
+      setRedacoes(res.data);
+      
+    } catch (err) {
+      console.error(err);
+      setUploadMsg('Erro ao enviar.');
+    } finally {
+      setUploadLoading(false);
     }
-  }, [user]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
   };
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <Container className="mt-5">
       <Card>
         <Card.Body>
-          <h2 className="text-center mb-4">Dashboard - LetrAl</h2>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h2>Dashboard - LetrAl</h2>
+            <Button variant="danger" size="sm" onClick={handleLogout}>Sair</Button>
+          </div>
 
-          {user ? (
-            <Alert variant="success">
-              Bem-vindo, <strong>{user.nome}</strong>! (Cargo: {user.role})
-            </Alert>
-          ) : (
-            <Alert variant="warning">Carregando...</Alert>
-          )}
-
-          {user && user.role === 'aluno' && (
-            <>
-              <Card className="my-3 p-3 bg-light">
-                <h4>Enviar Redação</h4>
-                <p>Envie sua redação para correção.</p>
-                <Link to="/enviar-redacao">
-                  <Button variant="primary">Enviar Nova Redação</Button>
-                </Link>
-              </Card>
-
-              <Card className="my-3 p-3 bg-light">
-                <h4>Minha Turma</h4>
-                {loading ? <Spinner animation="border" size="sm" /> : (
-                  <ListGroup variant="flush">
-                    {minhasTurmas.length > 0 ? (
-                      minhasTurmas.map(turma => (
-                        <ListGroup.Item key={turma.id} className="bg-light fw-bold">
-                          {turma.nome}
-                        </ListGroup.Item>
-                      ))
-                    ) : (
-                      <p className="text-muted mb-0">Você ainda não está em nenhuma turma.</p>
-                    )}
-                  </ListGroup>
-                )}
-              </Card>
-            </>
-          )}
-
-          {user && user.role === 'professor' && (
-            <Card className="my-3 p-3 bg-light">
-              <h4>Área do Professor</h4>
-              <p>Gerencie todas as turmas e alunos da escola.</p>
-              <Link to="/turmas">
-                <Button variant="primary">Gerenciar Turmas</Button>
-              </Link>
-            </Card>
-          )}
-
-          <hr />
-          <h4>
-            {user?.role === 'professor' ? 'Todas as Redações (Fila de Correção)' : 'Minhas Redações'}
-          </h4>
-
-          {loading && <Spinner animation="border" size="sm" />}
+          <Alert variant="info">Olá, <strong>{user?.nome}</strong> ({user?.role})</Alert>
+          
           {error && <Alert variant="danger">{error}</Alert>}
 
-          {!loading && !error && (
-            <ListGroup>
-              {redacoes.length > 0 ? (
-                redacoes.map(redacao => (
-                  <ListGroup.Item
-                    key={redacao.id}
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <strong>Tema:</strong> {redacao.tema}
-                      <br/>
-                      <small className="text-muted">
-                        {user.role === 'professor' && (
-                          <>
-                            <span className="text-dark fw-bold">Aluno: {redacao.User.nome}</span>
-                            {redacao.User.Turma ? (
-                                <Badge bg="info" text="dark" className="ms-2">
-                                  {redacao.User.Turma.nome}
-                                </Badge>
-                            ) : (
-                                <Badge bg="secondary" className="ms-2">Sem Turma</Badge>
-                            )}
-                            <span className="mx-2">|</span>
-                          </>
-                        )}
-                        Enviada em: {new Date(redacao.createdAt).toLocaleDateString()}
-                      </small>
-                    </div>
-
-                    <div className="text-end">
-                      <span
-                        className={`badge bg-${redacao.status === 'Corrigida' ? 'success' : 'warning'} me-2`}
-                      >
-                        {redacao.status}
-                      </span>
-                      {redacao.status === 'Corrigida' && (
-                         <span className="badge bg-dark me-2">Nota: {redacao.notaTotal}</span>
-                      )}
-
-                      <Link to={`/redacao/${redacao.id}`}>
-                        <Button variant={user.role === 'professor' ? "success" : "outline-primary"} size="sm">
-                          {user.role === 'professor' ? 'Corrigir' : 'Ver Detalhes'}
-                        </Button>
-                      </Link>
-                    </div>
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <p>Nenhuma redação encontrada.</p>
-              )}
-            </ListGroup>
+          {user?.role === 'aluno' && (
+            <div className="d-flex gap-3 mb-4">
+              <Button variant="primary" size="lg" onClick={() => setShowUpload(true)} className="flex-grow-1">
+                📤 Enviar Nova Redação
+              </Button>
+            </div>
           )}
 
-          <Button variant="danger" onClick={handleLogout} className="w-100 mt-4">
-            Sair (Logout)
-          </Button>
+          {user?.role === 'professor' && (
+             <div className="d-grid gap-2 mb-4">
+                <Button variant="primary" size="lg" onClick={() => navigate('/turmas')}>
+                  🏫 Gerenciar Turmas
+                </Button>
+             </div>
+          )}
+
+          <h4>{user?.role === 'professor' ? 'Fila de Correção' : 'Minhas Redações'}</h4>
+          
+          {loading ? <Spinner animation="border" /> : (
+            <ListGroup>
+              {redacoes.length > 0 ? redacoes.map(redacao => (
+                <ListGroup.Item key={redacao.id} className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>{redacao.tema}</strong>
+                    <br/>
+                    <small className="text-muted">
+                        {new Date(redacao.createdAt).toLocaleDateString()} 
+                        {user.role === 'professor' && ` - Aluno: ${redacao.User?.nome}`}
+                    </small>
+                  </div>
+                  <div>
+                    <Badge bg={redacao.status === 'Corrigida' ? 'success' : 'warning'} className="me-2">
+                        {redacao.status}
+                    </Badge>
+                    <Link to={`/redacao/${redacao.id}`}>
+                        <Button variant="outline-primary" size="sm">
+                            {user.role === 'professor' ? 'Corrigir' : 'Ver'}
+                        </Button>
+                    </Link>
+                  </div>
+                </ListGroup.Item>
+              )) : <p>Nenhuma redação.</p>}
+            </ListGroup>
+          )}
         </Card.Body>
       </Card>
+
+      <Modal show={showUpload} onHide={() => setShowUpload(false)} centered>
+        <Modal.Header closeButton><Modal.Title>Enviar Redação</Modal.Title></Modal.Header>
+        <Modal.Body>
+            <Form onSubmit={handleUpload}>
+                <Form.Group className="mb-3">
+                    <Form.Label>Tema</Form.Label>
+                    <Form.Control type="text" value={tema} onChange={e => setTema(e.target.value)} placeholder="Ex: ENEM 2024" />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                    <Form.Label>Foto da Redação</Form.Label>
+                    <Form.Control type="file" onChange={e => setFile(e.target.files[0])} accept="image/*" />
+                </Form.Group>
+                {uploadMsg && <p className={uploadMsg === 'Sucesso!' ? "text-success" : "text-danger"}>{uploadMsg}</p>}
+                <div className="d-grid">
+                    <Button type="submit" variant="success" disabled={uploadLoading}>
+                        {uploadLoading ? 'Enviando...' : 'Enviar Agora'}
+                    </Button>
+                </div>
+            </Form>
+        </Modal.Body>
+      </Modal>
+
     </Container>
   );
 }
