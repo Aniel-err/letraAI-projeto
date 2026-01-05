@@ -29,7 +29,7 @@ Facilitar a vida de docentes e discentes do IFMA, substituindo a entrega de pape
 
   * **Upload Simplificado:** Envio de redações (JPG/PNG) diretamente pelo Dashboard via Modal.
   * **Acompanhamento:** Visualização de notas, status (Enviada/Corrigida) e feedback detalhado.
-  * **UX Otimizada:** Login automático após verificação de e-mail e redirecionamentos inteligentes.
+  * **UX Otimizada:** verificação de e-mail e redirecionamentos inteligentes.
 
 ## 🛠️ Tecnologias Utilizadas
 
