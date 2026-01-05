@@ -1,17 +1,9 @@
-import {Model} from 'sequelize';
-
 export default (sequelize, DataTypes) => {
-  class Turma extends Model {
-    static associate(models) {
-      Turma.belongsTo(models.User, { foreignKey: 'professorId', as: 'Professor' });
-      Turma.hasMany(models.User, { foreignKey: 'turmaId' });
-    }
-  }
-  Turma.init({
-    nome: DataTypes.STRING,
-  }, {
-    sequelize,
-    modelName: 'Turma'
+  const Turma = sequelize.define('Turma', {
+    nome: { type: DataTypes.STRING },
+    tema: { type: DataTypes.STRING },
+    professorId: { type: DataTypes.INTEGER }
   });
+
   return Turma;
-}  
+};

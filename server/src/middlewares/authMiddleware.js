@@ -1,26 +1,35 @@
 import jwt from 'jsonwebtoken';
 
-export default (req, res, next) => {
+export const checkAuth = (req, res, next) => {
   try {
-    console.log('--- Auth Middleware ---');
-    console.log('Headers recebidos:', req.headers.authorization);
+    const authHeader = req.headers.authorization;
 
-    if (!req.headers.authorization) {
-      throw new Error('Cabeçalho Authorization ausente');
+    if (!authHeader) {
+      return res.status(401).json({ message: 'Falha na autenticação: Token ausente.' });
     }
 
-    const token = req.headers.authorization.split(' ')[1];
+    const parts = authHeader.split(' ');
+
+    if (parts.length !== 2) {
+      return res.status(401).json({ message: 'Token malformatado.' });
+    }
+
+    const [scheme, token] = parts;
+
+    if (!/^Bearer$/i.test(scheme)) {
+      return res.status(401).json({ message: 'Formato de token inválido.' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'SEU_SEGREDO';
     
-    if (!token) {
-      throw new Error('Token não encontrado no cabeçalho');
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'SEU_SEGREDO_SUPER_SECRETO');
+    const decoded = jwt.verify(token, secret);
+    
     req.userData = decoded;
-    next();
     
+    next();
+
   } catch (error) {
-    console.error('Erro de Autenticação:', error.message); 
-    return res.status(401).json({ message: 'Falha na autenticação' });
+    console.error('Erro de Autenticação:', error.message);
+    return res.status(401).json({ message: 'Sessão inválida ou expirada.' });
   }
 };

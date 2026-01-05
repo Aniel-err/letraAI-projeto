@@ -1,16 +1,22 @@
 import express from 'express';
-import authMiddleware from '../middlewares/authMiddleware.js';
-import upload from '../config/multer.js';
+import { checkAuth } from '../middlewares/authMiddleware.js'; // <--- CORREÇÃO AQUI
 import * as redacaoController from '../controllers/redacaoController.js';
+import upload from '../config/multer.js'; // Import do multer para upload de imagens
 
 const router = express.Router();
 
-router.post('/upload', authMiddleware, upload.single('imagem'), redacaoController.uploadRedacao);
+// Todas as rotas de redação exigem login
+router.get('/', checkAuth, redacaoController.getAllRedacoes);
+router.get('/:id', checkAuth, redacaoController.getRedacaoById);
 
-router.get('/', authMiddleware, redacaoController.getRedacoes);
+// Enviar redação com imagem
+router.post('/upload', checkAuth, upload.single('imagem'), redacaoController.createRedacao);
 
-router.get('/:id', authMiddleware, redacaoController.getRedacaoById);
+// Editar imagem da redação
+router.put('/:id/imagem', checkAuth, upload.single('imagem'), redacaoController.updateRedacaoImage);
 
-router.put('/:id/corrigir', authMiddleware, redacaoController.corrigirRedacao);
+// Rotas de professor/correção e exclusão
+router.put('/:id/corrigir', checkAuth, redacaoController.corrigirRedacao);
+router.delete('/:id', checkAuth, redacaoController.deleteRedacao);
 
 export default router;

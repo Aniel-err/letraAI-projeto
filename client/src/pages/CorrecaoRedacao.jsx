@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api'; // Correção
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Container, Row, Col, Card, Form, Button, Image, Spinner, Alert, Badge, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Image, Spinner, Alert, Badge, InputGroup, Modal, ListGroup } from 'react-bootstrap';
 
 const niveisCompetencia = [
   { label: "Nível 0: 0 pontos (Desconhecimento total)", value: 0 },
@@ -13,7 +13,7 @@ const niveisCompetencia = [
   { label: "Nível 5: 200 pontos (Domínio excelente)", value: 200 }
 ];
 
-const itensAnulatoriosOptions = [
+const MOTIVOS_ANULACAO = [
   "Fuga total ao tema",
   "Não atendimento ao tipo textual",
   "Texto insuficiente",
@@ -32,19 +32,27 @@ function CorrecaoRedacao() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false); 
+  const [successMsg, setSuccessMsg] = useState('');
   
+  const [showZoom, setShowZoom] = useState(false);
+
   const [notas, setNotas] = useState({ c1: 0, c2: 0, c3: 0, c4: 0, c5: 0 });
   const [total, setTotal] = useState(0);
-  const [itensAnulatorios, setItensAnulatorios] = useState([]); 
+  
   const [descricoes, setDescricoes] = useState([]); 
   
+  const [isAnulada, setIsAnulada] = useState(false);
+  const [motivoSelecionado, setMotivoSelecionado] = useState('');
+
+  const [showCriteria, setShowCriteria] = useState(false);
+
   const isProfessor = user?.role === 'professor';
 
   useEffect(() => {
     const fetchRedacao = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/redacoes/${id}`); 
+        const response = await api.get(`/redacoes/${id}`);
         const data = response.data;
         setRedacao(data);
         
@@ -55,10 +63,24 @@ function CorrecaoRedacao() {
           c4: data.notaC4 || 0,
           c5: data.notaC5 || 0,
         });
-        setItensAnulatorios(data.itensAnulatorios || []);
-        setDescricoes(data.descricoes ? data.descricoes.map((texto, index) => ({ id: index, texto })) : []);
+
+        if (data.descricoes && Array.isArray(data.descricoes)) {
+            setDescricoes(data.descricoes.map((texto, index) => ({ id: index, texto })));
+        } else {
+            setDescricoes([]);
+        }
+
+        const anulatorios = data.itensAnulatorios || [];
+        if (anulatorios.length > 0) {
+            setIsAnulada(true);
+            setMotivoSelecionado(anulatorios[0]);
+        } else {
+            setIsAnulada(false);
+            setMotivoSelecionado('');
+        }
         
       } catch (err) {
+        console.error(err);
         setError(err.response?.data?.message || 'Erro ao carregar redação.');
       } finally {
         setLoading(false);
@@ -68,19 +90,13 @@ function CorrecaoRedacao() {
   }, [id]);
 
   useEffect(() => {
-    const novoTotal = Object.values(notas).reduce((acc, nota) => acc + nota, 0);
+    const novoTotal = Object.values(notas).reduce((acc, nota) => acc + parseInt(nota || 0, 10), 0);
     setTotal(novoTotal);
   }, [notas]);
 
   const handleNotaChange = (competencia, valor) => {
     const novaNota = parseInt(valor, 10);
     setNotas(prev => ({ ...prev, [competencia]: novaNota }));
-  };
-
-  const handleAnulatorioChange = (item) => {
-    setItensAnulatorios(prev => 
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-    );
   };
 
   const handleAdicionarDescricao = () => {
@@ -94,16 +110,59 @@ function CorrecaoRedacao() {
   const handleRemoverDescricao = (id) => {
     setDescricoes(prev => prev.filter(d => d.id !== id));
   };
-  
+
+  const handleToggleAnulacao = (e) => {
+    const checked = e.target.checked;
+    setIsAnulada(checked);
+    if (checked) {
+        setNotas({ c1: 0, c2: 0, c3: 0, c4: 0, c5: 0 });
+    } else {
+        setMotivoSelecionado('');
+    }
+  };
+
   const handleSalvarCorrecao = async () => {
     setIsSaving(true);
-    const correcaoData = { notas, total, itensAnulatorios, descricoes: descricoes.map(d => d.texto) };
+    setError('');
+    setSuccessMsg('');
+
+    if (isAnulada && !motivoSelecionado) {
+        setError('Por favor, selecione um motivo para anular a redação.');
+        setIsSaving(false);
+        return;
+    }
+
+    const arrayAnulatorios = isAnulada ? [motivoSelecionado] : [];
+    const arrayDescricoes = descricoes
+        .map(d => d.texto)
+        .filter(t => t && t.trim() !== '');
+
+    const notaFinalEnvio = isAnulada ? 0 : total;
+
+    const payload = { 
+        notas, 
+        total: notaFinalEnvio, 
+        itensAnulatorios: arrayAnulatorios, 
+        descricoes: arrayDescricoes,
+        status: 'Corrigida'
+    };
     
     try {
-      await api.put(`/redacoes/${id}/corrigir`, correcaoData); 
-      alert('Correção salva com sucesso!');
-      navigate('/dashboard'); 
+      await api.put(`/redacoes/${id}/corrigir`, payload);
+      setSuccessMsg('Correção salva com sucesso!');
+      
+      setRedacao(prev => ({ 
+          ...prev, 
+          notaC1: notas.c1, notaC2: notas.c2, notaC3: notas.c3, notaC4: notas.c4, notaC5: notas.c5,
+          status: 'Corrigida',
+          itensAnulatorios: arrayAnulatorios, 
+          descricoes: arrayDescricoes,
+          notaTotal: notaFinalEnvio
+      }));
+      window.scrollTo(0, 0);
+
     } catch (err) {
+      console.error(err);
       setError(err.response?.data?.message || 'Erro ao salvar correção.');
     } finally {
       setIsSaving(false);
@@ -111,130 +170,217 @@ function CorrecaoRedacao() {
   };
   
   if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
-  if (error) return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
   if (!redacao) return null;
 
+  const anulatoriosAtuais = isAnulada ? [motivoSelecionado] : (redacao.itensAnulatorios || []);
+  const estaAnulada = anulatoriosAtuais.length > 0 && anulatoriosAtuais[0] !== "";
+  const notaExibida = estaAnulada ? 0 : total;
+
   return (
-    <Container fluid className="p-3">
-      <Row className="bg-dark text-white p-2 mb-3 align-items-center">
-        <Col><strong>LetrAl - Correção</strong></Col>
-        <Col className="text-end">
-          <Badge bg="light" text="dark">{user?.nome}</Badge>
-          <Button variant="outline-light" size="sm" className="ms-2" onClick={() => navigate('/dashboard')}>Voltar</Button>
-        </Col>
-      </Row>
+    <Container fluid className="p-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2 className="m-0">📝 Correção de Redação</h2>
+        <div>
+            <Button variant="outline-info" className="me-2" onClick={() => setShowCriteria(true)}>
+                ℹ️ Critérios de Anulação
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/dashboard')}>Voltar</Button>
+        </div>
+      </div>
 
       <Row>
-        <Col md={7}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>Redação de: {redacao.User?.nome} (Tema: {redacao.tema})</span>
-              <Badge bg={itensAnulatorios.length > 0 ? "danger" : "primary"} pill>
-                Pontuação Total: {itensAnulatorios.length > 0 ? 0 : total} / 1000
-              </Badge>
-            </Card.Header>
-            <Card.Body style={{ height: '80vh', overflow: 'auto' }}>
-              {redacao.imagemUrl && <Image src={redacao.imagemUrl} fluid />}
-            </Card.Body>
-          </Card>
-        </Col>
+        {/* COLUNA DA ESQUERDA: DADOS E IMAGEM */}
+        <Col lg={7} className="mb-4">
+          <Card className="h-100 shadow-sm">
+            <Card.Header className="text-center py-3">
+              <h3 className="fw-bold text-primary mb-2">{redacao.tema}</h3>
+              <h5 className="fw-bold text-body">
+                👤 Aluno: {redacao.User?.nome}
+              </h5>
+              
+              {redacao.editedAt && (
+                  <div className="mt-2">
+                    <Badge bg="warning" text="dark" className="fs-6 border border-dark">
+                        ⚠️ Imagem editada pelo aluno em: {new Date(redacao.editedAt).toLocaleString()}
+                    </Badge>
+                  </div>
+              )}
 
-        <Col md={5}>
-          <Card className="mb-3">
-            <Card.Header>Itens Anulatórios</Card.Header>
-            <Card.Body>
-              <Form>
-                {itensAnulatoriosOptions.map((item, index) => (
-                  <Form.Check 
-                    key={index}
-                    type="checkbox"
-                    id={`check-anulatorio-${index}`}
-                    label={item}
-                    disabled={!isProfessor}
-                    checked={itensAnulatorios.includes(item)}
-                    onChange={() => handleAnulatorioChange(item)}
+            </Card.Header>
+            <Card.Body style={{ minHeight: '600px', backgroundColor: '#f8f9fa', textAlign: 'center', overflow: 'auto' }}>
+              {redacao.imagemUrl ? (
+                  <Image 
+                    src={redacao.imagemUrl} 
+                    fluid 
+                    style={{ maxHeight: '800px', cursor: 'zoom-in', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} 
+                    onClick={() => setShowZoom(true)}
+                    title="Clique para ampliar a imagem"
                   />
-                ))}
-              </Form>
-            </Card.Body>
-          </Card>
-
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              Descrições
-              <Button variant="primary" size="sm" disabled={!isProfessor} onClick={handleAdicionarDescricao}>+ Adicionar</Button>
-            </Card.Header>
-            <Card.Body>
-              {descricoes.length === 0 ? (
-                <p className="text-muted">Nenhuma descrição adicionada.</p>
               ) : (
-                descricoes.map((desc) => (
-                  <InputGroup className="mb-2" key={desc.id}>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      placeholder="Digite a descrição..."
-                      value={desc.texto}
-                      disabled={!isProfessor}
-                      onChange={(e) => handleDescricaoChange(desc.id, e.target.value)}
-                    />
-                    <Button variant="outline-danger" disabled={!isProfessor} onClick={() => handleRemoverDescricao(desc.id)}>&#x1F5D1;</Button>
-                  </InputGroup>
-                ))
+                  <p className="mt-5 text-muted">Imagem não disponível.</p>
               )}
             </Card.Body>
+            <Card.Footer className="text-center text-muted">
+                <small>💡 Clique na imagem para visualizar em tela cheia.</small>
+            </Card.Footer>
           </Card>
         </Col>
-      </Row>
 
-      <Row className="mt-3">
-        <Col>
-          <Card>
-            <Card.Header>Competências</Card.Header>
+        {/* COLUNA DA DIREITA: AVALIAÇÃO */}
+        <Col lg={5}>
+          {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+          {successMsg && <Alert variant="success" onClose={() => setSuccessMsg('')} dismissible>{successMsg}</Alert>}
+
+          {/* PAINEL DE NOTA TOTAL */}
+          <Card className="mb-4 shadow text-center border-primary">
+            <Card.Body className="py-4">
+                <h4 className="text-muted text-uppercase" style={{ letterSpacing: '2px' }}>Nota Final</h4>
+                <div style={{ fontSize: '4rem', fontWeight: 'bold', color: notaExibida >= 600 ? '#198754' : '#dc3545' }}>
+                    {notaExibida}
+                    <span style={{ fontSize: '1.5rem', color: '#6c757d' }}> / 1000</span>
+                </div>
+                {estaAnulada && <Badge bg="danger">REDAÇÃO ANULADA</Badge>}
+            </Card.Body>
+          </Card>
+
+          {/* PAINEL DE ANULAÇÃO */}
+          {(isProfessor || estaAnulada) && (
+            <Card className="mb-3 shadow-sm border-danger">
+                <Card.Header className="bg-danger text-white">🚫 Anulação</Card.Header>
+                <Card.Body>
+                    {isProfessor ? (
+                        <>
+                            <Form.Check 
+                                type="switch"
+                                id="anular-switch"
+                                label="ANULAR REDAÇÃO"
+                                checked={isAnulada}
+                                onChange={handleToggleAnulacao}
+                                className="fw-bold text-danger mb-3 fs-5"
+                            />
+                            {isAnulada && (
+                                <Form.Select 
+                                    value={motivoSelecionado}
+                                    onChange={(e) => setMotivoSelecionado(e.target.value)}
+                                >
+                                    <option value="">Selecione o motivo...</option>
+                                    {MOTIVOS_ANULACAO.map((m, i) => (
+                                        <option key={i} value={m}>{m}</option>
+                                    ))}
+                                </Form.Select>
+                            )}
+                        </>
+                    ) : (
+                        <Alert variant="danger" className="m-0 text-center">
+                            <strong>MOTIVO:</strong> {anulatoriosAtuais[0]}
+                        </Alert>
+                    )}
+                </Card.Body>
+            </Card>
+          )}
+
+          {/* PAINEL DE COMENTÁRIOS */}
+          {(isProfessor || descricoes.length > 0) && (
+            <Card className="mb-3 shadow-sm">
+                <Card.Header className="d-flex justify-content-between align-items-center bg-info text-white">
+                <span>💬 Comentários / Feedback</span>
+                {isProfessor && (
+                    <Button variant="light" size="sm" onClick={handleAdicionarDescricao}>+ Add</Button>
+                )}
+                </Card.Header>
+                <Card.Body>
+                {descricoes.length === 0 ? <p className="text-muted text-center mb-0">Nenhum comentário.</p> : (
+                    descricoes.map((desc) => (
+                    <InputGroup className="mb-2" key={desc.id}>
+                        <Form.Control
+                        as="textarea" rows={2}
+                        placeholder="Comentário..."
+                        value={desc.texto}
+                        disabled={!isProfessor}
+                        onChange={(e) => handleDescricaoChange(desc.id, e.target.value)}
+                        />
+                        {isProfessor && (
+                            <Button variant="outline-danger" onClick={() => handleRemoverDescricao(desc.id)}>X</Button>
+                        )}
+                    </InputGroup>
+                    ))
+                )}
+                </Card.Body>
+            </Card>
+          )}
+
+          {/* PAINEL DE COMPETÊNCIAS */}
+          <Card className="shadow-sm">
+            <Card.Header className="bg-success text-white">📊 Competências</Card.Header>
             <Card.Body>
               <Form>
-                <Row className="fw-bold mb-2 d-none d-md-flex"> 
-                  <Col md={3}>Competência</Col>
-                  <Col md={7}>Nível</Col>
-                  <Col md={2} className="text-end">Pontos</Col>
-                </Row>
-                
                 {[1, 2, 3, 4, 5].map(c => (
-                  <Row key={c} className="mb-3 mb-md-2 align-items-center border-bottom pb-2">
-                    <Col md={3}><strong>Competência {c}</strong></Col>
-                    <Col md={7}>
-                      <Form.Select 
-                        aria-label={`Competência ${c}`}
-                        value={notas[`c${c}`]}
-                        onChange={(e) => handleNotaChange(`c${c}`, e.target.value)}
-                        disabled={!isProfessor}
-                      >
-                        <option value={0}>Selecione o nível</option>
-                        {niveisCompetencia.map(n => (
-                          <option key={n.label} value={n.value}>{n.label}</option>
-                        ))}
-                      </Form.Select>
-                    </Col>
-                    <Col md={2} className="text-md-end text-start mt-2 mt-md-0">
-                      <Badge bg="secondary" style={{ fontSize: '1rem' }}>
-                        {notas[`c${c}`]} pontos
-                      </Badge>
-                    </Col>
-                  </Row>
+                  <div key={c} className="mb-3 border-bottom pb-2">
+                    <label className="fw-bold d-flex justify-content-between">
+                        <span>Competência {c}</span>
+                        <span className="text-primary">{notas[`c${c}`]} pts</span>
+                    </label>
+                    <Form.Select 
+                      size="sm"
+                      value={notas[`c${c}`]}
+                      onChange={(e) => handleNotaChange(`c${c}`, e.target.value)}
+                      disabled={!isProfessor || isAnulada}
+                      className="mt-1"
+                    >
+                      <option value={0}>0 - Desconhecimento</option>
+                      {niveisCompetencia.filter(n=>n.value>0).map(n => (
+                        <option key={n.value} value={n.value}>{n.label}</option>
+                      ))}
+                    </Form.Select>
+                  </div>
                 ))}
               </Form>
             </Card.Body>
-            
             {isProfessor && (
-              <Card.Footer className="text-end">
-                <Button variant="success" size="lg" onClick={handleSalvarCorrecao} disabled={isSaving}>
-                  {isSaving ? <Spinner as="span" animation="border" size="sm" /> : 'Salvar Correção'}
+              <Card.Footer className="d-grid">
+                <Button variant="primary" size="lg" onClick={handleSalvarCorrecao} disabled={isSaving}>
+                  {isSaving ? <Spinner as="span" animation="border" size="sm" /> : '💾 Salvar Correção'}
                 </Button>
               </Card.Footer>
             )}
           </Card>
         </Col>
       </Row>
+
+      {/* MODAL DE CRITÉRIOS DE ANULAÇÃO */}
+      <Modal show={showCriteria} onHide={() => setShowCriteria(false)} centered>
+        <Modal.Header closeButton className="bg-danger text-white">
+            <Modal.Title>Critérios de Anulação</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+            <p>A redação será anulada (nota 0) se apresentar qualquer um dos seguintes problemas:</p>
+            <ListGroup variant="flush">
+                {MOTIVOS_ANULACAO.map((m, i) => (
+                    <ListGroup.Item key={i}>❌ {m}</ListGroup.Item>
+                ))}
+            </ListGroup>
+        </Modal.Body>
+        <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCriteria(false)}>Fechar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* --- NOVO: MODAL DE ZOOM DA IMAGEM --- */}
+      <Modal show={showZoom} onHide={() => setShowZoom(false)} centered size="xl">
+        <Modal.Header closeButton className="bg-dark text-white border-0">
+          <Modal.Title>🔍 Visualização Ampliada</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center bg-dark p-0" style={{ overflow: 'auto', maxHeight: '90vh' }}>
+           {redacao && redacao.imagemUrl && (
+             <img 
+               src={redacao.imagemUrl} 
+               alt="Redação Zoom" 
+               style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
+             />
+           )}
+        </Modal.Body>
+      </Modal>
+
     </Container>
   );
 }

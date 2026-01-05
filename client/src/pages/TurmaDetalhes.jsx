@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api'; 
+import api from '../services/api';
 import { Container, Card, Form, Button, Alert, ListGroup, Spinner, Row, Col } from 'react-bootstrap';
 
 function TurmaDetalhes() {
@@ -10,116 +10,128 @@ function TurmaDetalhes() {
   const [turma, setTurma] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
   const [emailAluno, setEmailAluno] = useState('');
-  const [formError, setFormError] = useState('');
-  const [formMessage, setFormMessage] = useState('');
+  const [msg, setMsg] = useState('');
 
   const fetchTurmaDetalhes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/turmas/${id}`); 
+      const response = await api.get(`/turmas/${id}`);
       setTurma(response.data);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao buscar detalhes da turma.');
+      console.error(err);
+      setError(err.response?.data?.message || 'Erro ao buscar turma.');
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchTurmaDetalhes();
-  }, [fetchTurmaDetalhes]);
+  useEffect(() => { fetchTurmaDetalhes(); }, [fetchTurmaDetalhes]);
 
-  const handleAddAluno = async (e) => {
-    e.preventDefault();
-    setFormError('');
-    setFormMessage('');
-
-    if (!emailAluno) {
-      setFormError('O email do aluno é obrigatório.');
-      return;
-    }
-
+  const handleProcessarSolicitacao = async (alunoId, acao) => {
     try {
-      const response = await api.post(`/turmas/${id}/alunos`, { emailAluno }); 
-      setFormMessage(response.data.message);
-      setEmailAluno(''); 
-      fetchTurmaDetalhes(); 
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Erro ao adicionar aluno.');
-    }
+        await api.post('/turmas/aprovar', { alunoId, acao, turmaId: id });
+        setMsg(acao === 'aprovar' ? 'Aluno aprovado!' : 'Solicitação rejeitada.');
+        fetchTurmaDetalhes(); 
+    } catch (err) { console.error(err); setMsg('Erro ao processar.'); }
   };
 
-  const handleRemoveAluno = async (alunoId) => {
-    if (window.confirm("Tem certeza que deseja remover este aluno da turma?")) {
-      try {
-        setFormError('');
-        setFormMessage('');
-        
-        const response = await api.delete(`/turmas/${id}/alunos/${alunoId}`);
-        
-        setFormMessage(response.data.message); 
-        fetchTurmaDetalhes(); 
-        
-      } catch (err) {
-        setFormError(err.response?.data?.message || 'Erro ao remover aluno.');
-      }
-    }
+  const handleAddManual = async (e) => {
+    e.preventDefault();
+    if (!emailAluno) return;
+    try {
+      const response = await api.post(`/turmas/${id}/alunos`, { email: emailAluno });
+      setMsg(response.data.message);
+      setEmailAluno(''); 
+      fetchTurmaDetalhes(); 
+    } catch (err) { console.error(err); setMsg(err.response?.data?.message || 'Erro ao adicionar.'); }
   };
 
   if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
 
+  const pendentes = turma?.Alunos?.filter(a => a.turmaStatus === 'pendente') || [];
+  const aprovados = turma?.Alunos?.filter(a => a.turmaStatus === 'aprovado') || [];
+
+  const AvatarAluno = ({ src }) => (
+      <img 
+        src={src || 'https://via.placeholder.com/40?text=?'} 
+        alt="Perfil"
+        className="rounded-circle me-3 border"
+        width="40" height="40"
+        style={{ objectFit: 'cover' }}
+      />
+  );
+
   return (
     <Container className="mt-5">
       <Button variant="outline-secondary" size="sm" onClick={() => navigate('/turmas')} className="mb-3">
-        &larr; Voltar para Todas as Turmas
+        &larr; Voltar
       </Button>
 
       {error && <Alert variant="danger">{error}</Alert>}
-      {formMessage && <Alert variant="success">{formMessage}</Alert>}
-      {formError && <Alert variant="danger">{formError}</Alert>}
+      {msg && <Alert variant="info" onClose={() => setMsg('')} dismissible>{msg}</Alert>}
       
       {turma && (
         <Row>
-          <Col md={7}>
-            <Card>
-              <Card.Header><h4>Alunos na Turma: {turma.nome}</h4></Card.Header>
+          <Col md={8}>
+            <h2 className="mb-4">Turma: {turma.nome}</h2>
+
+            {/* Pendentes */}
+            {pendentes.length > 0 && (
+                <Card className="mb-4 border-warning shadow-sm">
+                    <Card.Header className="bg-warning text-dark fw-bold">
+                        ⏳ Solicitações ({pendentes.length})
+                    </Card.Header>
+                    <ListGroup variant="flush">
+                        {pendentes.map(aluno => (
+                            <ListGroup.Item key={aluno.id} className="d-flex justify-content-between align-items-center">
+                                <div className="d-flex align-items-center">
+                                    <AvatarAluno src={aluno.avatar} />
+                                    <span>{aluno.nome} <small className="text-muted">({aluno.email})</small></span>
+                                </div>
+                                <div>
+                                    <Button variant="success" size="sm" className="me-2" onClick={() => handleProcessarSolicitacao(aluno.id, 'aprovar')}>Aceitar</Button>
+                                    <Button variant="danger" size="sm" onClick={() => handleProcessarSolicitacao(aluno.id, 'rejeitar')}>Recusar</Button>
+                                </div>
+                            </ListGroup.Item>
+                        ))}
+                    </ListGroup>
+                </Card>
+            )}
+
+            {/* Matriculados */}
+            <Card className="shadow-sm">
+              <Card.Header className="bg-primary text-white">👥 Alunos Matriculados</Card.Header>
               <Card.Body>
                 <ListGroup variant="flush">
-                  {turma.Alunos && turma.Alunos.length > 0 ? (
-                    turma.Alunos.map(aluno => (
+                  {aprovados.length > 0 ? (
+                    aprovados.map(aluno => (
                       <ListGroup.Item key={aluno.id} className="d-flex justify-content-between align-items-center">
-                        {aluno.nome}
-                        <Button variant="outline-danger" size="sm" onClick={() => handleRemoveAluno(aluno.id)}>
-                          &#x1F5D1; Remover 
-                        </Button>
+                        <div className="d-flex align-items-center">
+                            <AvatarAluno src={aluno.avatar} />
+                            <span>{aluno.nome}</span>
+                        </div>
+                        <Button variant="outline-danger" size="sm" onClick={() => handleProcessarSolicitacao(aluno.id, 'rejeitar')}>Remover</Button>
                       </ListGroup.Item>
                     ))
-                  ) : (
-                    <p>Nenhum aluno matriculado nesta turma.</p>
-                  )}
+                  ) : <p className="text-muted m-0">Nenhum aluno nesta turma.</p>}
                 </ListGroup>
               </Card.Body>
             </Card>
           </Col>
 
-          <Col md={5}>
-            <Card>
-              <Card.Header><h4>Adicionar Aluno</h4></Card.Header>
+          {/* Adicionar */}
+          <Col md={4}>
+            <Card className="shadow-sm">
+              <Card.Header>➕ Adicionar Aluno</Card.Header>
               <Card.Body>
-                <Form onSubmit={handleAddAluno}>
-                  <Form.Group className="mb-3" controlId="formEmailAluno">
+                <Form onSubmit={handleAddManual}>
+                  <Form.Group className="mb-3">
                     <Form.Label>Email do Aluno</Form.Label>
-                    <Form.Control 
-                      type="email"
-                      placeholder="Digite o email do aluno..."
-                      value={emailAluno}
-                      onChange={(e) => setEmailAluno(e.target.value)}
-                    />
+                    <Form.Control type="email" value={emailAluno} onChange={(e) => setEmailAluno(e.target.value)} />
                   </Form.Group>
-                  <Button variant="primary" type="submit" className="w-100">Adicionar</Button>
+                  <Button variant="success" type="submit" className="w-100">Adicionar</Button>
                 </Form>
               </Card.Body>
             </Card>

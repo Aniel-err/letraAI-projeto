@@ -1,26 +1,22 @@
-import { Model } from 'sequelize';
-
 export default (sequelize, DataTypes) => {
-  class Redacao extends Model {
-    static associate(models) {
-      Redacao.belongsTo(models.User, { foreignKey: 'userId' });
-    }
-  }
-  Redacao.init({
-    tema: DataTypes.STRING,
-    imagemUrl: DataTypes.STRING,
-    status: DataTypes.STRING,
-    notaC1: DataTypes.INTEGER,
-    notaC2: DataTypes.INTEGER,
-    notaC3: DataTypes.INTEGER,
-    notaC4: DataTypes.INTEGER,
-    notaC5: DataTypes.INTEGER,
-    notaTotal: DataTypes.INTEGER,
-    itensAnulatorios: DataTypes.JSON,
-    descricoes: DataTypes.JSON
-  }, {
-    sequelize,
-    modelName: 'Redacao',
+  const Redacao = sequelize.define('Redacao', {
+    tema: { type: DataTypes.STRING },
+    imagemUrl: { type: DataTypes.STRING },
+    status: { type: DataTypes.STRING, defaultValue: 'Enviada' },
+    
+    notaC1: { type: DataTypes.INTEGER },
+    notaC2: { type: DataTypes.INTEGER },
+    notaC3: { type: DataTypes.INTEGER },
+    notaC4: { type: DataTypes.INTEGER },
+    notaC5: { type: DataTypes.INTEGER },
+    notaTotal: { type: DataTypes.INTEGER },
+    itensAnulatorios: { type: DataTypes.JSON },
+    descricoes: { type: DataTypes.JSON },
+
+    editedAt: { type: DataTypes.DATE }, 
+    userId: { type: DataTypes.INTEGER },
+    turmaId: { type: DataTypes.INTEGER } 
   });
+
   return Redacao;
 };
