@@ -124,7 +124,3 @@ Acesse `http://localhost:5173` no navegador.
 ---
 
 *Desenvolvido por Aniel Antonio.*
-
-```
-
-```
