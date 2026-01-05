@@ -1,4 +1,4 @@
-
+# 📝 LetraAi - Plataforma de Correção de Redações
 
 > **LetraAi** é um sistema web desenvolvido para modernizar o envio e a correção de redações escolares. A plataforma conecta alunos e professores, permitindo o gerenciamento de múltiplas turmas, upload de atividades e correções detalhadas baseadas nas competências do ENEM.
 
