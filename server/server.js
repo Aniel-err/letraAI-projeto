@@ -28,12 +28,20 @@ app.use('/api/redacoes', redacaoRoutes);
 app.use('/api/turmas', turmaRoutes);
 
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend funcionando com ES Modules!' });
+  res.json({ message: 'Backend rodando no servidor do Prof. Bruno!' });
+});
+
+
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
 db.sequelize.sync({ alter: true }).then(() => {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Acesse em: http://69.62.97.146:${PORT}`);
   });
 }).catch((err) => {
     console.error("Erro ao sincronizar banco de dados:", err);

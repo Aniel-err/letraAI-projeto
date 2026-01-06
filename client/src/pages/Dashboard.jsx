@@ -15,6 +15,10 @@ function Dashboard() {
   const [statusReal, setStatusReal] = useState(user?.turmaStatus || 'Sem Turma');
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [turmasDisponiveis, setTurmasDisponiveis] = useState([]); 
+  const [turmasPerdidas, setTurmasPerdidas] = useState([]); 
+
+  const [profTurmas, setProfTurmas] = useState([]); 
+  const [filtroTurma, setFiltroTurma] = useState(''); 
 
   const [showUpload, setShowUpload] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -42,14 +46,35 @@ function Dashboard() {
 
         if (user.role === 'aluno') {
             const resTurmas = await api.get('/turmas');
-            const aprovadas = resTurmas.data.filter(t => t.meuStatus === 'aprovado');
-            const disponiveis = aprovadas.filter(t => !minhas.some(r => r.turmaId === t.id));
+            const todasTurmas = resTurmas.data;
+            const aprovadas = todasTurmas.filter(t => t.meuStatus === 'aprovado');
+            
+            const agora = new Date();
+
+            const disponiveis = aprovadas.filter(t => {
+                const jaEnviou = minhas.some(r => r.turmaId === t.id);
+                const prazoOk = !t.prazo || new Date(t.prazo) > agora;
+                return !jaEnviou && prazoOk;
+            });
+
+            const perdidas = aprovadas.filter(t => {
+                const jaEnviou = minhas.some(r => r.turmaId === t.id);
+                const prazoPassou = t.prazo && new Date(t.prazo) < agora;
+                return !jaEnviou && prazoPassou;
+            });
+
             setTurmasDisponiveis(disponiveis);
+            setTurmasPerdidas(perdidas);
 
             if (aprovadas.length > 0) setStatusReal('aprovado');
-            else if (resTurmas.data.some(t => t.meuStatus === 'pendente')) setStatusReal('pendente');
+            else if (todasTurmas.some(t => t.meuStatus === 'pendente')) setStatusReal('pendente');
             else setStatusReal('Sem Turma');
+        } 
+        else if (user.role === 'professor') {
+            const resProfTurmas = await api.get('/turmas');
+            setProfTurmas(resProfTurmas.data);
         }
+
         setError('');
       } catch (err) {
         console.error(err);
@@ -72,7 +97,7 @@ function Dashboard() {
     try {
       await api.post('/redacoes/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       alert('Enviado!'); window.location.reload(); 
-    } catch (err) { console.error(err); setUploadMsg('Erro ao enviar.'); }
+    } catch (err) { console.error(err); setUploadMsg(err.response?.data?.message || 'Erro ao enviar.'); }
     finally { setUploadLoading(false); }
   };
 
@@ -85,7 +110,7 @@ function Dashboard() {
       try {
           await api.put(`/redacoes/${editId}/imagem`, formData);
           alert('Atualizado!'); window.location.reload();
-      } catch (err) { console.error(err); setUploadMsg('Erro ao atualizar.'); }
+      } catch (err) { console.error(err); setUploadMsg(err.response?.data?.message || 'Erro ao atualizar.'); }
       finally { setUploadLoading(false); }
   };
 
@@ -104,6 +129,11 @@ function Dashboard() {
   };
 
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  const redacoesFiltradas = redacoes.filter(r => {
+      if (!filtroTurma) return true;
+      return r.turmaId === Number(filtroTurma);
+  });
 
   return (
     <Container className="mt-5">
@@ -127,32 +157,66 @@ function Dashboard() {
           
           {error && <Alert variant="danger">{error}</Alert>}
 
+   
           {user?.role === 'aluno' && (
             <Row className="mb-4">
               <Col md={6} className="mb-2">
                  {turmasDisponiveis.length > 0 ? (
-                    <Button variant="primary" size="lg" className="w-100" onClick={() => setShowUpload(true)}>📤 Enviar Redação</Button>
+                    <Button variant="primary" size="lg" className="w-100" onClick={() => setShowUpload(true)}>📤 Enviar Redação ({turmasDisponiveis.length})</Button>
                  ) : (
-                    <Button variant="secondary" size="lg" className="w-100" disabled>✅ Tudo enviado</Button>
+                    <Button variant="secondary" size="lg" className="w-100" disabled>✅ Nenhuma pendência</Button>
                  )}
               </Col>
               <Col md={6} className="mb-2">
-                <Button variant="outline-primary" size="lg" className="w-100" onClick={() => navigate('/turmas')}>🏫 Turmas</Button>
+                <Button variant="outline-primary" size="lg" className="w-100" onClick={() => navigate('/turmas')}>🏫 Ver Turmas</Button>
               </Col>
             </Row>
           )}
 
+         
           {user?.role === 'professor' && (
-             <div className="d-grid gap-2 mb-4">
-                <Button variant="primary" size="lg" onClick={() => navigate('/turmas')}>🏫 Gerenciar Turmas</Button>
+             <div className="mb-4">
+                <div className="d-grid gap-2 mb-3">
+                    <Button variant="primary" size="lg" onClick={() => navigate('/turmas')}>🏫 Gerenciar Turmas (Alterar Prazos)</Button>
+                </div>
+                
+                <Card className="bg-light border-0">
+                    <Card.Body className="d-flex align-items-center">
+                        <strong className="me-3 text-nowrap">🔍 Filtrar por Turma:</strong>
+                        <Form.Select 
+                            value={filtroTurma} 
+                            onChange={(e) => setFiltroTurma(e.target.value)}
+                            className="shadow-sm"
+                        >
+                            <option value="">Todas as Turmas</option>
+                            {profTurmas.map(t => (
+                                <option key={t.id} value={t.id}>{t.nome} - {t.tema}</option>
+                            ))}
+                        </Form.Select>
+                    </Card.Body>
+                </Card>
              </div>
           )}
 
-          <h4>{user?.role === 'professor' ? 'Fila de Correção' : 'Histórico de Redações'}</h4>
+          <h4 className="mt-3">{user?.role === 'professor' ? 'Fila de Correção' : 'Histórico & Prazos'}</h4>
           
           {loading ? <Spinner animation="border" /> : (
             <ListGroup variant="flush">
-              {redacoes.map(r => (
+              
+              {user.role === 'aluno' && turmasPerdidas.map(t => (
+                  <ListGroup.Item key={`perdida-${t.id}`} className="d-flex justify-content-between align-items-center py-3 border-bottom bg-light">
+                      <div className="text-muted">
+                          <span className="fw-bold">TURMA: {t.nome} - {t.tema}</span>
+                          <br/>
+                          <small>Prazo encerrou em: {new Date(t.prazo).toLocaleString()}</small>
+                      </div>
+                      <div>
+                          <Badge bg="danger" className="p-2">Nota: 0 (Prazo Expirado)</Badge>
+                      </div>
+                  </ListGroup.Item>
+              ))}
+
+              {redacoesFiltradas.map(r => (
                 <ListGroup.Item key={r.id} className="d-flex justify-content-between align-items-center py-3 border-bottom">
                   <div>
                     <span className="fw-bold text-primary">{r.Turma ? `TURMA: ${r.Turma.nome} - ` : ''}{r.tema}</span>
@@ -168,13 +232,9 @@ function Dashboard() {
                                     style={{objectFit:'cover', cursor: 'pointer'}}
                                     alt="avatar"
                                     onClick={() => handleViewStudentImage(r.User.avatar, r.User.nome)}
-                                    title="Clique para ampliar"
                                 />
                             ) : (
-                                <div 
-                                    className="rounded-circle me-2 d-flex justify-content-center align-items-center bg-secondary text-white fw-bold"
-                                    style={{width: '40px', height: '40px', fontSize: '18px', userSelect: 'none'}}
-                                >
+                                <div className="rounded-circle me-2 d-flex justify-content-center align-items-center bg-secondary text-white fw-bold" style={{width:'40px', height:'40px'}}>
                                     {r.User?.nome ? r.User.nome.charAt(0).toUpperCase() : '?'}
                                 </div>
                             )}
@@ -183,46 +243,62 @@ function Dashboard() {
                     )}
                     
                     <small className="text-muted d-block mt-1">
-                        {new Date(r.createdAt).toLocaleDateString()}
-                        {r.editedAt && <span className="text-warning ms-2">(Editado)</span>}
+                        Enviado: {new Date(r.createdAt).toLocaleDateString()} 
+                        {r.Turma?.prazo && <span className="ms-2">(Prazo: {new Date(r.Turma.prazo).toLocaleDateString()})</span>}
                     </small>
                   </div>
                   <div>
-                    {/* --- LÓGICA DE COR DA NOTA --- */}
                     {r.status === 'Corrigida' && r.notaTotal !== null && (
-                        <Badge 
-                            bg={r.notaTotal < 500 ? 'danger' : 'info'} 
-                            className="me-2 p-2" 
-                            style={{fontSize: '0.9em'}}
-                        >
+                        <Badge bg={r.notaTotal < 500 ? 'danger' : 'info'} className="me-2 p-2">
                             Nota: {r.notaTotal}
                         </Badge>
                     )}
                     
                     <Badge bg={r.status === 'Corrigida' ? 'success' : 'warning'} className="me-2 p-2">{r.status}</Badge>
                     <Link to={`/redacao/${r.id}`}><Button variant="outline-secondary" size="sm" className="me-2">Ver Detalhes</Button></Link>
+                    
                     {user.role === 'aluno' && r.status !== 'Corrigida' && (
-                        <Button variant="outline-primary" size="sm" onClick={()=>abrirModalEdicao(r.id)}>✏️</Button>
+                        (!r.Turma?.prazo || new Date(r.Turma.prazo) > new Date()) ? (
+                            <Button variant="outline-primary" size="sm" onClick={()=>abrirModalEdicao(r.id)}>✏️</Button>
+                        ) : <Badge bg="secondary">Edição Fechada</Badge>
                     )}
                   </div>
                 </ListGroup.Item>
               ))}
-              {redacoes.length === 0 && <p className="text-muted text-center">Nenhuma redação encontrada.</p>}
+              
+              {redacoesFiltradas.length === 0 && turmasPerdidas.length === 0 && (
+                  <p className="text-muted text-center mt-3">
+                      {filtroTurma ? 'Nenhuma redação enviada nesta turma.' : 'Nenhuma redação encontrada.'}
+                  </p>
+              )}
             </ListGroup>
           )}
         </Card.Body>
       </Card>
 
-      {/* Modais */}
+
       <Modal show={showUpload} onHide={()=>setShowUpload(false)}>
         <Modal.Header closeButton><Modal.Title>Enviar</Modal.Title></Modal.Header>
         <Modal.Body>
             <Form onSubmit={handleUpload}>
                 <Form.Select onChange={e=>setSelectedTurma(e.target.value)} required>
                     <option value="">Selecione a Turma</option>
-                    {turmasDisponiveis.map(t=><option key={t.id} value={t.id}>{t.nome} - {t.tema}</option>)}
+                    {turmasDisponiveis.map(t=>(
+                        <option key={t.id} value={t.id}>
+                            {t.nome} - (Até {t.prazo ? new Date(t.prazo).toLocaleDateString() : 'Sem prazo'})
+                        </option>
+                    ))}
                 </Form.Select>
-                <Form.Control type="file" className="mt-3" onChange={e=>setFile(e.target.files[0])} required />
+                
+               
+                <Form.Control 
+                    type="file" 
+                    accept="image/*"
+                    className="mt-3" 
+                    onChange={e=>setFile(e.target.files[0])} 
+                    required 
+                />
+                
                 {uploadMsg && <p className="text-danger mt-2">{uploadMsg}</p>}
                 <Button type="submit" className="mt-3 w-100" disabled={uploadLoading}>Enviar</Button>
             </Form>
@@ -233,7 +309,12 @@ function Dashboard() {
         <Modal.Header closeButton><Modal.Title>Reenviar</Modal.Title></Modal.Header>
         <Modal.Body>
             <Form onSubmit={handleEdit}>
-                <Form.Control type="file" onChange={e=>setFile(e.target.files[0])} required />
+                <Form.Control 
+                    type="file" 
+                    accept="image/*"
+                    onChange={e=>setFile(e.target.files[0])} 
+                    required 
+                />
                 {uploadMsg && <p className="text-danger mt-2">{uploadMsg}</p>}
                 <Button type="submit" variant="warning" className="mt-3 w-100" disabled={uploadLoading}>Atualizar</Button>
             </Form>
@@ -241,12 +322,8 @@ function Dashboard() {
       </Modal>
 
       <Modal show={showImageModal} onHide={() => setShowImageModal(false)} centered size="lg">
-          <Modal.Header closeButton>
-              <Modal.Title>Aluno: {selectedStudentName}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="text-center bg-dark">
-              <img src={selectedImage} alt="Foto do Aluno" style={{maxWidth: '100%', maxHeight: '80vh', borderRadius: '4px'}} />
-          </Modal.Body>
+          <Modal.Header closeButton><Modal.Title>{selectedStudentName}</Modal.Title></Modal.Header>
+          <Modal.Body className="text-center bg-dark"><img src={selectedImage} alt="Aluno" style={{maxWidth:'100%', borderRadius:'4px'}}/></Modal.Body>
       </Modal>
     </Container>
   );

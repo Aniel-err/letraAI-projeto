@@ -35,6 +35,7 @@ function CorrecaoRedacao() {
   const [successMsg, setSuccessMsg] = useState('');
   
   const [showZoom, setShowZoom] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1); 
 
   const [notas, setNotas] = useState({ c1: 0, c2: 0, c3: 0, c4: 0, c5: 0 });
   const [total, setTotal] = useState(0);
@@ -43,7 +44,6 @@ function CorrecaoRedacao() {
   
   const [isAnulada, setIsAnulada] = useState(false);
   const [motivoSelecionado, setMotivoSelecionado] = useState('');
-
   const [showCriteria, setShowCriteria] = useState(false);
 
   const isProfessor = user?.role === 'professor';
@@ -133,10 +133,7 @@ function CorrecaoRedacao() {
     }
 
     const arrayAnulatorios = isAnulada ? [motivoSelecionado] : [];
-    const arrayDescricoes = descricoes
-        .map(d => d.texto)
-        .filter(t => t && t.trim() !== '');
-
+    const arrayDescricoes = descricoes.map(d => d.texto).filter(t => t && t.trim() !== '');
     const notaFinalEnvio = isAnulada ? 0 : total;
 
     const payload = { 
@@ -160,13 +157,21 @@ function CorrecaoRedacao() {
           notaTotal: notaFinalEnvio
       }));
       window.scrollTo(0, 0);
-
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Erro ao salvar correção.');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleZoomIn = () => setZoomLevel(prev => prev + 0.25);
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(0.5, prev - 0.25));
+  const handleResetZoom = () => setZoomLevel(1);
+
+  const openZoomModal = () => {
+      setZoomLevel(1); 
+      setShowZoom(true);
   };
   
   if (loading) return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
@@ -189,7 +194,6 @@ function CorrecaoRedacao() {
       </div>
 
       <Row>
-        {/* COLUNA DA ESQUERDA: DADOS E IMAGEM */}
         <Col lg={7} className="mb-4">
           <Card className="h-100 shadow-sm">
             <Card.Header className="text-center py-3">
@@ -205,7 +209,6 @@ function CorrecaoRedacao() {
                     </Badge>
                   </div>
               )}
-
             </Card.Header>
             <Card.Body style={{ minHeight: '600px', backgroundColor: '#f8f9fa', textAlign: 'center', overflow: 'auto' }}>
               {redacao.imagemUrl ? (
@@ -213,7 +216,7 @@ function CorrecaoRedacao() {
                     src={redacao.imagemUrl} 
                     fluid 
                     style={{ maxHeight: '800px', cursor: 'zoom-in', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} 
-                    onClick={() => setShowZoom(true)}
+                    onClick={openZoomModal}
                     title="Clique para ampliar a imagem"
                   />
               ) : (
@@ -226,12 +229,10 @@ function CorrecaoRedacao() {
           </Card>
         </Col>
 
-        {/* COLUNA DA DIREITA: AVALIAÇÃO */}
         <Col lg={5}>
           {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
           {successMsg && <Alert variant="success" onClose={() => setSuccessMsg('')} dismissible>{successMsg}</Alert>}
 
-          {/* PAINEL DE NOTA TOTAL */}
           <Card className="mb-4 shadow text-center border-primary">
             <Card.Body className="py-4">
                 <h4 className="text-muted text-uppercase" style={{ letterSpacing: '2px' }}>Nota Final</h4>
@@ -243,7 +244,6 @@ function CorrecaoRedacao() {
             </Card.Body>
           </Card>
 
-          {/* PAINEL DE ANULAÇÃO */}
           {(isProfessor || estaAnulada) && (
             <Card className="mb-3 shadow-sm border-danger">
                 <Card.Header className="bg-danger text-white">🚫 Anulação</Card.Header>
@@ -279,7 +279,6 @@ function CorrecaoRedacao() {
             </Card>
           )}
 
-          {/* PAINEL DE COMENTÁRIOS */}
           {(isProfessor || descricoes.length > 0) && (
             <Card className="mb-3 shadow-sm">
                 <Card.Header className="d-flex justify-content-between align-items-center bg-info text-white">
@@ -309,7 +308,6 @@ function CorrecaoRedacao() {
             </Card>
           )}
 
-          {/* PAINEL DE COMPETÊNCIAS */}
           <Card className="shadow-sm">
             <Card.Header className="bg-success text-white">📊 Competências</Card.Header>
             <Card.Body>
@@ -347,7 +345,6 @@ function CorrecaoRedacao() {
         </Col>
       </Row>
 
-      {/* MODAL DE CRITÉRIOS DE ANULAÇÃO */}
       <Modal show={showCriteria} onHide={() => setShowCriteria(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
             <Modal.Title>Critérios de Anulação</Modal.Title>
@@ -365,18 +362,38 @@ function CorrecaoRedacao() {
         </Modal.Footer>
       </Modal>
 
-      {/* --- NOVO: MODAL DE ZOOM DA IMAGEM --- */}
       <Modal show={showZoom} onHide={() => setShowZoom(false)} centered size="xl">
-        <Modal.Header closeButton className="bg-dark text-white border-0">
-          <Modal.Title>🔍 Visualização Ampliada</Modal.Title>
+        <Modal.Header closeButton className="bg-dark text-white border-bottom border-secondary d-flex align-items-center">
+          <Modal.Title className="me-auto">🔍 Visualização Ampliada</Modal.Title>
+          <div className="d-flex gap-2 me-4">
+              <Button variant="secondary" size="sm" onClick={handleZoomOut} title="Diminuir Zoom">➖</Button>
+              <span className="text-white align-self-center border px-2 rounded" style={{minWidth: '60px', textAlign: 'center'}}>
+                  {Math.round(zoomLevel * 100)}%
+              </span>
+              <Button variant="secondary" size="sm" onClick={handleZoomIn} title="Aumentar Zoom">➕</Button>
+              <Button variant="outline-light" size="sm" onClick={handleResetZoom}>Reset</Button>
+          </div>
         </Modal.Header>
         <Modal.Body className="text-center bg-dark p-0" style={{ overflow: 'auto', maxHeight: '90vh' }}>
            {redacao && redacao.imagemUrl && (
-             <img 
-               src={redacao.imagemUrl} 
-               alt="Redação Zoom" 
-               style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
-             />
+             <div style={{ 
+                 display: 'inline-block', 
+                 minWidth: '100%', 
+                 minHeight: '100%' 
+             }}>
+                 <img 
+                   src={redacao.imagemUrl} 
+                   alt="Redação Zoom" 
+                   style={{ 
+                       transform: `scale(${zoomLevel})`, 
+                       transformOrigin: 'top center', 
+                       transition: 'transform 0.2s ease-out',
+                       maxWidth: '100%', 
+                       display: 'block', 
+                       margin: '0 auto' 
+                   }} 
+                 />
+             </div>
            )}
         </Modal.Body>
       </Modal>
