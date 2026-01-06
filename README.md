@@ -1,8 +1,3 @@
-Com base nas grandes mudanças que fizemos (padrão ES6, relacionamento N:N entre alunos e turmas, sistema de correção avançado com zoom, avatares, etc.), o seu `README.md` precisa de uma atualização para refletir a complexidade atual do projeto.
-
-Aqui está a versão atualizada e profissional do **README.md**.
-
-```markdown
 # 📝 LetraAi - Plataforma de Correção de Redações
 
 > **LetraAi** é um sistema web desenvolvido para modernizar o envio e a correção de redações escolares. A plataforma conecta alunos e professores, permitindo o gerenciamento de múltiplas turmas, upload de atividades e correções detalhadas baseadas nas competências do ENEM.
@@ -129,7 +124,3 @@ Acesse `http://localhost:5173` no navegador.
 ---
 
 *Desenvolvido por Aniel Antonio.*
-
-```
-
-```
