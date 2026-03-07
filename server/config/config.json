@@ -1,10 +1,17 @@
 {
   "development": {
-    "username": "letraai",
-    "password": "Bval@1104",
-    "database": "postgres",
-    "host": "69.62.97.146",
+    "username": "postgres",
+    "password": "BD2027.2p.ifma.2025",
+    "database": "letral_db",
+    "host": "127.0.0.1",
     "port": 5432,
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "BD2027.2p.ifma.2025",
+    "database": "database_test",
+    "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
