@@ -1,41 +1,45 @@
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-const uploadPath = path.resolve(__dirname, '..', '..', 'uploads');
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath); 
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
-    cb(null, uniqueName);
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
-  if (allowedMimes.includes(file.mimetype)) {
-    cb(null, true); 
-  } else {
-    cb(new Error('Tipo de arquivo inválido. Apenas JPG ou PNG são permitidos.'), false);
-  }
-};
+console.log("--- DEBUG CLOUDINARY ---");
+console.log("Cloud Name carregado:", process.env.CLOUDINARY_CLOUD_NAME ? "Sim" : "NÃO");
+console.log("API Key carregada:", process.env.CLOUDINARY_API_KEY ? "Sim" : "NÃO");
 
-const upload = multer({
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'letrai_uploads',
+      format: 'png', 
+      public_id: `profile-${Date.now()}`
+    };
+  },
+});
+
+const upload = multer({ 
   storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 1024 * 1024 * 5 } 
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Apenas imagens são permitidas!'), false);
+    }
+  }
 });
 
 export default upload;

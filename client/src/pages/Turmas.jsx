@@ -128,7 +128,7 @@ function Turmas() {
             <Card.Header className="bg-primary text-white p-3">
                 <h3 className="m-0">{user.role === 'professor' ? '🏫 Minhas Turmas' : '🏫 Turmas Disponíveis'}</h3>
             </Card.Header>
-            <Card.Body className="p-4">
+            <Card.Body className="p-3 p-md-4">
               {loading && <div className="text-center p-5"><Spinner animation="border" /></div>}
               {error && <Alert variant="danger">{error}</Alert>}
               
@@ -139,9 +139,9 @@ function Turmas() {
                       const isExpired = turma.prazo && new Date(turma.prazo) < new Date();
 
                       return (
-                        <ListGroup.Item key={turma.id} className="d-flex justify-content-between align-items-center p-3 border-bottom">
-                          <div>
-                            <h5 className="mb-1 fw-bold">{turma.nome}</h5>
+                        <ListGroup.Item key={turma.id} className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 border-bottom gap-3">
+                          <div className="w-100">
+                            <h5 className="mb-1 fw-bold text-primary">{turma.nome}</h5>
                             <p className="mb-1 text-muted">📝 Tema: <strong>{turma.tema || 'Livre'}</strong></p>
                             
                             {turma.prazo ? (
@@ -156,31 +156,36 @@ function Turmas() {
                             )}
                           </div>
 
-                          <div>
+                          <div className="d-flex flex-wrap gap-2 w-100 justify-content-md-end mt-2 mt-md-0">
                               {user.role === 'professor' ? (
                                   <>
-                                      <Link to={`/turma/${turma.id}`}>
-                                          <Button variant="outline-primary" className="me-2">Alunos</Button>
+                                      <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
+                                          <Button variant="outline-primary" className="w-100 fw-bold">⚙️ Gerenciar</Button>
                                       </Link>
-                                      <Button variant="outline-warning" className="me-2" onClick={() => { 
+                                      <Button variant="outline-warning" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => { 
                                           setEditData({
                                               ...turma, 
                                               prazo: formatForInput(turma.prazo) 
                                           }); 
                                           setShowEdit(true); 
-                                      }}>✏️</Button>
-                                      <Button variant="outline-danger" onClick={() => handleDeleteTurma(turma.id)}>🗑️</Button>
+                                      }}>✏️ Editar</Button>
+                                      <Button variant="outline-danger" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => handleDeleteTurma(turma.id)}>🗑️ Excluir</Button>
                                   </>
                               ) : (
                                   <>
-                                      {turma.meuStatus === 'aprovado' && <Badge bg="success" className="p-2 fs-6">✅ Matriculado</Badge>}
-                                      {turma.meuStatus === 'pendente' && <Badge bg="warning" text="dark" className="p-2 fs-6">⏳ Aguardando Aprovação</Badge>}
+                                      {turma.meuStatus === 'aprovado' && (
+                                          <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
+                                              <Button variant="primary" className="w-100 fw-bold">📖 Acessar Turma</Button>
+                                          </Link>
+                                      )}
+                                      
+                                      {turma.meuStatus === 'pendente' && <Badge bg="warning" text="dark" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⏳ Aguardando Aprovação</Badge>}
                                       
                                       {!turma.meuStatus && (
                                           isExpired ? (
-                                              <Button variant="secondary" disabled>⛔ Inscrições Encerradas</Button>
+                                              <Button variant="secondary" className="w-100 w-md-auto fw-bold" disabled>⛔ Inscrições Encerradas</Button>
                                           ) : (
-                                              <Button variant="success" onClick={() => handleSolicitar(turma.id)}>Solicitar Entrada</Button>
+                                              <Button variant="success" className="w-100 w-md-auto fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
                                           )
                                       )}
                                   </>
@@ -199,22 +204,21 @@ function Turmas() {
         {user.role === 'professor' && (
             <Col lg={4}>
             <Card className="shadow-sm">
-                <Card.Header className="bg-success text-white p-3"><h3 className="m-0">➕ Nova Turma</h3></Card.Header>
+                <Card.Header className="bg-success text-white p-3"><h5 className="m-0 fw-bold">➕ Nova Turma</h5></Card.Header>
                 <Card.Body className="p-4">
                 <Form onSubmit={handleCreateTurma}>
                     <Form.Group className="mb-3">
                         <Form.Label>Nome da Turma</Form.Label>
-                        <Form.Control size="lg" type="text" value={nomeTurma} onChange={(e) => setNomeTurma(e.target.value)} placeholder="Ex: 3º Ano B" />
+                        <Form.Control type="text" value={nomeTurma} onChange={(e) => setNomeTurma(e.target.value)} placeholder="Ex: 3º Ano B" />
                     </Form.Group>
                     <Form.Group className="mb-3">
                         <Form.Label>Tema da Redação</Form.Label>
-                        <Form.Control size="lg" type="text" value={temaTurma} onChange={(e) => setTemaTurma(e.target.value)} placeholder="Ex: O impacto da IA..." />
+                        <Form.Control type="text" value={temaTurma} onChange={(e) => setTemaTurma(e.target.value)} placeholder="Ex: O impacto da IA..." />
                     </Form.Group>
                     
                     <Form.Group className="mb-3">
                         <Form.Label>Prazo de Entrega (Opcional)</Form.Label>
                         <Form.Control 
-                            size="lg" 
                             type="datetime-local" 
                             value={prazoTurma} 
                             min={getCurrentDateTime()} 
@@ -224,7 +228,7 @@ function Turmas() {
 
                     {formMessage && <Alert variant="success">{formMessage}</Alert>}
                     {formError && <Alert variant="danger">{formError}</Alert>}
-                    <Button variant="success" size="lg" type="submit" className="w-100">Criar Turma</Button>
+                    <Button variant="success" type="submit" className="w-100 fw-bold">Criar Turma</Button>
                 </Form>
                 </Card.Body>
             </Card>
@@ -258,7 +262,7 @@ function Turmas() {
           </Modal.Body>
           <Modal.Footer>
               <Button variant="secondary" onClick={() => setShowEdit(false)}>Cancelar</Button>
-              <Button variant="primary" onClick={handleUpdateTurma}>Salvar</Button>
+              <Button variant="warning" className="fw-bold" onClick={handleUpdateTurma}>Salvar Alterações</Button>
           </Modal.Footer>
       </Modal>
     </Container>

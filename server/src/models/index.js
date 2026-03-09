@@ -1,7 +1,5 @@
 import Sequelize from 'sequelize';
 import process from 'process';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createRequire } from "module";
 import 'dotenv/config';
 
@@ -9,13 +7,15 @@ import userModel from './user.js';
 import turmaModel from './turma.js';
 import redacaoModel from './redacao.js';
 import userTurmasModel from './UserTurmas.js';
+import propostaModel from './Proposta.js'; 
 
 const require = createRequire(import.meta.url);
 const config = require('../../config/config.json');
 
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
-const db = {};
+
+const db = {}; 
 
 const database = process.env.DB_NAME || dbConfig.database;
 const username = process.env.DB_USERNAME || dbConfig.username;
@@ -33,12 +33,13 @@ const User = userModel(sequelize, Sequelize.DataTypes);
 const Turma = turmaModel(sequelize, Sequelize.DataTypes);
 const Redacao = redacaoModel(sequelize, Sequelize.DataTypes);
 const UserTurmas = userTurmasModel(sequelize, Sequelize.DataTypes);
+const Proposta = propostaModel(sequelize); 
 
 db.User = User;
 db.Turma = Turma;
 db.Redacao = Redacao;
 db.UserTurmas = UserTurmas;
-
+db.Proposta = Proposta; 
 
 User.belongsToMany(Turma, { through: UserTurmas, as: 'Turmas', foreignKey: 'userId' });
 Turma.belongsToMany(User, { through: UserTurmas, as: 'Users', foreignKey: 'turmaId' });
@@ -54,6 +55,12 @@ Turma.belongsTo(User, { foreignKey: 'professorId', as: 'Professor' });
 
 User.hasMany(Redacao, { foreignKey: 'userId' });
 Redacao.belongsTo(User, { foreignKey: 'userId' });
+
+Turma.hasMany(Proposta, { foreignKey: 'turmaId', as: 'Propostas' });
+Proposta.belongsTo(Turma, { foreignKey: 'turmaId', as: 'Turma' });
+
+Proposta.hasMany(Redacao, { foreignKey: 'propostaId', as: 'Redacoes' });
+Redacao.belongsTo(Proposta, { foreignKey: 'propostaId', as: 'Proposta' });
 
 Turma.hasMany(Redacao, { foreignKey: 'turmaId', as: 'Redacoes' });
 Redacao.belongsTo(Turma, { foreignKey: 'turmaId', as: 'Turma' });

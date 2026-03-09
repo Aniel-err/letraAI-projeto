@@ -10,8 +10,6 @@ export default (sequelize, DataTypes) => {
   }
   Turma.init({
     nome: DataTypes.STRING,
-    tema: DataTypes.STRING,
-    prazo: DataTypes.DATE 
   }, {
     sequelize,
     modelName: 'Turma',

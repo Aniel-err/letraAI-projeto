@@ -199,8 +199,10 @@ export const updateProfile = async (req, res) => {
     if (password && password.trim() !== '') {
         user.password = await bcrypt.hash(password, 10);
     }
+    
+    // MÁGICA DA NUVEM: req.file.path agora tem o link seguro (https) gerado pelo Cloudinary
     if (req.file) {
-        user.avatar = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        user.avatar = req.file.path;
     }
 
     await user.save();
@@ -216,6 +218,7 @@ export const updateProfile = async (req, res) => {
         }
     });
   } catch (error) {
+    console.error("Erro no updateProfile:", error);
     res.status(500).json({ message: 'Erro ao atualizar perfil.' });
   }
 };
@@ -227,7 +230,7 @@ export const getMe = async (req, res) => {
             include: [{ 
                 model: Turma, 
                 as: 'Turmas', 
-                attributes: ['id', 'nome', 'tema'],
+                attributes: ['id', 'nome'], 
                 through: { attributes: ['status'] }
             }] 
         });

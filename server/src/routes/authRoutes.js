@@ -17,3 +17,4 @@ router.get('/me', checkAuth, authController.getMe);
 router.put('/profile', checkAuth, upload.single('avatar'), authController.updateProfile);
 
 export default router;
+

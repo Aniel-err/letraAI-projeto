@@ -1,6 +1,5 @@
 export default (sequelize, DataTypes) => {
   const Redacao = sequelize.define('Redacao', {
-    tema: { type: DataTypes.STRING },
     imagemUrl: { type: DataTypes.STRING },
     status: { type: DataTypes.STRING, defaultValue: 'Enviada' },
     
@@ -15,7 +14,8 @@ export default (sequelize, DataTypes) => {
 
     editedAt: { type: DataTypes.DATE }, 
     userId: { type: DataTypes.INTEGER },
-    turmaId: { type: DataTypes.INTEGER } 
+    turmaId: { type: DataTypes.INTEGER },
+    propostaId: { type: DataTypes.INTEGER } 
   });
 
   return Redacao;

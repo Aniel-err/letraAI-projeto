@@ -9,6 +9,7 @@ import db from './src/models/index.js';
 import authRoutes from './src/routes/authRoutes.js';
 import redacaoRoutes from './src/routes/redacaoRoutes.js';
 import turmaRoutes from './src/routes/turmaRoutes.js';
+import propostaRoutes from './src/routes/propostaRoutes.js';
 
 dotenv.config();
 
@@ -18,25 +19,30 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/redacoes', redacaoRoutes);
 app.use('/api/turmas', turmaRoutes);
+app.use('/api/propostas', propostaRoutes);
 
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend funcionando Localmente!' });
+  res.json({ message: 'Backend LetrAI Online!' });
 });
 
-
-
-db.sequelize.sync({ alter: true }).then(() => {
+db.sequelize.sync({ alter: false }).then(() => {
   app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });
 }).catch((err) => {
-    console.error("Erro ao sincronizar banco de dados:", err);
+    console.error("❌ Erro ao sincronizar banco de dados:", err);
 });

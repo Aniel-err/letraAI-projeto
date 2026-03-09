@@ -3,6 +3,7 @@ import { Navbar, Container, Nav, Dropdown, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 function AppNavbar() {
   const { user, logout } = useAuth();
@@ -10,6 +11,23 @@ function AppNavbar() {
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+
+  const getFixedAvatarUrl = (url) => {
+    if (!url || url === 'null' || url === 'undefined') return defaultAvatar;
+    if (url.startsWith('blob:') || url.startsWith('data:')) return url; 
+    try {
+        const partes = url.replace(/\\/g, '/').split('/');
+        const nomeArquivo = partes[partes.length - 1];
+        if (!nomeArquivo || nomeArquivo === 'null') return defaultAvatar;
+        
+        const baseUrl = api.defaults.baseURL ? api.defaults.baseURL.replace(/\/api\/?$/, '') : 'http://localhost:3001';
+        return `${baseUrl}/uploads/${nomeArquivo}`;
+    } catch { 
+        return defaultAvatar; 
+    }
+  };
 
   if (!user) return null;
 
@@ -34,7 +52,6 @@ function AppNavbar() {
           </Nav>
 
           <Nav className="align-items-center gap-3">
-            {/* Botão de Tema */}
             <Button 
                 variant={theme === 'light' ? 'outline-dark' : 'outline-light'} 
                 onClick={toggleTheme} 
@@ -44,12 +61,18 @@ function AppNavbar() {
                {theme === 'light' ? '🌙' : '☀️'}
             </Button>
 
-            {/* Perfil */}
             <Dropdown align="end">
-              <Dropdown.Toggle variant="transparent" className="d-flex align-items-center border-0 p-0">
-                {user.avatar && (
-                    <img src={user.avatar} alt="Avatar" className="rounded-circle me-2" style={{width: 35, height: 35, objectFit: 'cover'}} />
-                )}
+              <Dropdown.Toggle variant="transparent" className="d-flex align-items-center border-0 p-0 shadow-none">
+                <img 
+                    src={getFixedAvatarUrl(user.avatar)} 
+                    alt="Avatar" 
+                    className="rounded-circle me-2 bg-light" 
+                    style={{width: 35, height: 35, objectFit: 'cover'}} 
+                    onError={(e) => {
+                        e.currentTarget.onerror = null; // Bloqueia o loop
+                        e.currentTarget.src = defaultAvatar;
+                    }}
+                />
                 <span style={{ color: 'var(--app-text)', fontWeight: 'bold' }}>{user.nome}</span>
               </Dropdown.Toggle>
 
