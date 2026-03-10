@@ -98,28 +98,16 @@ function CorrecaoRedacao() {
     fetchRedacao();
   }, [id]);
 
-  useEffect(() => {
-      const baixarImagemSegura = async () => {
-          if (!redacao || !redacao.imagemUrl) return;
-          try {
-              setImagemCarregando(true);
-              const partes = redacao.imagemUrl.replace(/\\/g, '/').split('/');
-              const nomeArquivo = partes[partes.length - 1];
-              const response = await api.get(`/../uploads/${nomeArquivo}`, { responseType: 'blob' });
-              
-              const reader = new FileReader();
-              reader.readAsDataURL(response.data);
-              reader.onloadend = () => {
-                  setImagemSeguraUrl(reader.result); 
-                  setImagemCarregando(false);
-              };
-          } catch { 
-              setImagemSeguraUrl('');
-              setImagemCarregando(false);
-          }
-      };
-      baixarImagemSegura();
-  }, [redacao]);
+ useEffect(() => {
+    if (redacao && redacao.imagemUrl) {
+        const urlFinal = redacao.imagemUrl.startsWith('http') 
+            ? redacao.imagemUrl 
+            : `${api.defaults.baseURL}/../${redacao.imagemUrl}`;
+        
+        setImagemSeguraUrl(urlFinal);
+        setImagemCarregando(false);
+    }
+}, [redacao]);
 
   useEffect(() => {
     const novoTotal = Object.values(notas).reduce((acc, nota) => acc + parseInt(nota || 0, 10), 0);
