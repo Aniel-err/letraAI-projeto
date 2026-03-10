@@ -25,8 +25,10 @@ function Dashboard() {
   const cameraEditRef = useRef(null);
   const galeriaEditRef = useRef(null);
 
+  // Ajustado para aceitar URLs do Cloudinary (que começam com http)
   const getFixedAvatarUrl = (url) => {
     if (!url) return null;
+    if (url.startsWith('http')) return url; // Retorna direto se já for da nuvem
     try {
         const partes = url.replace(/\\/g, '/').split('/');
         const nomeArquivo = partes[partes.length - 1];
@@ -90,9 +92,8 @@ function Dashboard() {
       formData.append('imagem', editFile);
 
       try {
-          await api.put(`/redacoes/${redacaoEditando}/imagem`, formData, { 
-              headers: { 'Content-Type': 'multipart/form-data' } 
-          });
+          // AQUI ESTÁ A CORREÇÃO CRÍTICA: Removido o headers manual do multipart/form-data
+          await api.put(`/redacoes/${redacaoEditando}/imagem`, formData);
           
           setSuccessMsg("✅ Redação reenviada com sucesso!");
           setShowEditModal(false);

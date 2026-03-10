@@ -23,6 +23,9 @@ export default (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     }
+  }, {
+    tableName: 'Proposta', 
+    freezeTableName: true  
   });
 
   return Proposta;

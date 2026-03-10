@@ -63,46 +63,28 @@ export const createRedacao = async (req, res) => {
 
 export const updateRedacaoImage = async (req, res) => {
     try {
-        console.log("--- [DEBUG] INÍCIO DO PROCESSO DE UPLOAD ---");
         const { id } = req.params;
-        console.log("ID recebido na URL:", id);
-
-        // 1. Verifica se o arquivo chegou do Multer/Cloudinary
-        if (!req.file) {
-            console.log("❌ ERRO: req.file está undefined. Verifique se o frontend está enviando o campo como 'imagem'.");
-            return res.status(400).json({ message: 'Arquivo não recebido pelo servidor.' });
-        }
-        console.log("Arquivo recebido pelo Multer:", req.file.originalname);
-        console.log("URL gerada pelo Cloudinary (path):", req.file.path);
-
-        // 2. Busca a redação no banco
         const redacao = await Redacao.findByPk(id);
-        if (!redacao) {
-            console.log(`❌ ERRO: Nenhuma redação encontrada com o ID ${id} no banco.`);
-            return res.status(404).json({ message: `Redação ID ${id} não encontrada.` });
-        }
+        if (!redacao) return res.status(404).json({ message: 'Não encontrada.' });
 
-        // 3. Atualização dos campos
-        redacao.imagemUrl = req.file.path; // Usa o path da nuvem
+        // PROTEÇÃO: Verifica se o Multer realmente recebeu o ficheiro
+        if (!req.file) return res.status(400).json({ message: 'Imagem não recebida.' });
+
+        // USE .path PARA CLOUDINARY
+        redacao.imagemUrl = req.file.path; 
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
-        // Reset de notas para nova correção
+        // Reset de notas
         redacao.notaC1 = null; redacao.notaC2 = null; redacao.notaC3 = null;
         redacao.notaC4 = null; redacao.notaC5 = null; redacao.notaTotal = null;
         redacao.itensAnulatorios = []; redacao.descricoes = [];
 
         await redacao.save();
-        console.log("✅ SUCESSO: Banco de dados atualizado com o link da nuvem!");
-
-        res.status(200).json({ message: 'Redação enviada!', redacao });
-
+        res.status(200).json({ message: 'Redação atualizada!', redacao });
     } catch (error) { 
-        // Força o erro a aparecer como texto claro no log do Render
-        console.log("--- [DEBUG] ERRO FATAL DETECTADO ---");
-        console.log("Mensagem do Erro:", error.message);
-        console.error("Stack do Erro:", error.stack);
-        res.status(500).json({ message: error.message }); 
+        console.error("❌ Erro em updateRedacaoImage:", error);
+        res.status(500).json({ message: 'Erro interno ao processar imagem.' }); 
     }
 };
 
