@@ -138,6 +138,18 @@ function Turmas() {
                     turmas.map(turma => {
                       const isExpired = turma.prazo && new Date(turma.prazo) < new Date();
 
+                      let statusAluno = turma.meuStatus;
+                      if (!statusAluno && turma.Users && Array.isArray(turma.Users)) {
+                          const meuRegistro = turma.Users.find(u => u.id === user.id);
+                          if (meuRegistro && meuRegistro.UserTurmas) {
+                              statusAluno = meuRegistro.UserTurmas.status;
+                          }
+                      }
+
+                      const isPendente = statusAluno?.toLowerCase() === 'pendente';
+                      const isRejeitado = statusAluno?.toLowerCase() === 'rejeitado';
+                      const isAprovado = statusAluno && !isPendente && !isRejeitado;
+
                       return (
                         <ListGroup.Item key={turma.id} className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 border-bottom gap-3">
                           <div className="w-100">
@@ -173,21 +185,21 @@ function Turmas() {
                                   </>
                               ) : (
                                   <>
-                                      {turma.meuStatus === 'aprovado' && (
+                                      {isAprovado && (
                                           <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
                                               <Button variant="primary" className="w-100 fw-bold">📖 Acessar Turma</Button>
                                           </Link>
                                       )}
                                       
-                                      {turma.meuStatus === 'pendente' && (
+                                      {isPendente && (
                                           <Badge bg="warning" text="dark" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⏳ Aguardando Aprovação</Badge>
                                       )}
 
-                                      {!turma.meuStatus && !isExpired && (
+                                      {(!statusAluno || isRejeitado) && !isExpired && (
                                           <Button variant="success" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
                                       )}
 
-                                      {!turma.meuStatus && isExpired && (
+                                      {(!statusAluno || isRejeitado) && isExpired && (
                                           <Badge bg="secondary" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⛔ Inscrições Encerradas</Badge>
                                       )}
                                   </>
