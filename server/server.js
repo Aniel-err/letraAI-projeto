@@ -52,7 +52,7 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend LetrAI Online!' });
 });
 
-db.sequelize.sync({ alter: false }).then(() => {
+db.sequelize.sync({ alter: true }).then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });

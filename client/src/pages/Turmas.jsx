@@ -73,20 +73,20 @@ function Turmas() {
       try {
           await api.put(`/turmas/${editData.id}`, { 
               nome: editData.nome, 
-              tema: editData.tema,
-              prazo: editData.prazo 
+              tema: editData.tema || '',
+              prazo: editData.prazo ? editData.prazo : null // Resolve o crash de data vazia no banco
           });
           setShowEdit(false);
           fetchTurmas(false);
-          setMsg('Turma atualizada!');
+          setMsg('Turma atualizada com sucesso!');
       } catch (err) {
           console.error(err); 
-          alert(err.response?.data?.message || 'Erro ao atualizar turma');
+          alert(err.response?.data?.message || 'Erro ao atualizar turma no backend.');
       }
   };
 
   const handleDeleteTurma = async (id) => {
-      if(!window.confirm("Tem certeza?")) return;
+      if(!window.confirm("Tem certeza que deseja excluir esta turma?")) return;
       try {
           await api.delete(`/turmas/${id}`);
           fetchTurmas(false);
@@ -173,20 +173,21 @@ function Turmas() {
                                   </>
                               ) : (
                                   <>
-                                      {turma.meuStatus === 'aprovado' && (
-                                          <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
-                                              <Button variant="primary" className="w-100 fw-bold">📖 Acessar Turma</Button>
-                                          </Link>
+                                      {/* BOTÃO RESTAURADO: Aluno sempre vê a opção de acessar/ver propostas */}
+                                      <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
+                                          <Button variant="primary" className="w-100 fw-bold">📖 Ver Propostas / Acessar</Button>
+                                      </Link>
+                                      
+                                      {!turma.meuStatus && !isExpired && (
+                                          <Button variant="success" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
                                       )}
                                       
-                                      {turma.meuStatus === 'pendente' && <Badge bg="warning" text="dark" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⏳ Aguardando Aprovação</Badge>}
-                                      
-                                      {!turma.meuStatus && (
-                                          isExpired ? (
-                                              <Button variant="secondary" className="w-100 w-md-auto fw-bold" disabled>⛔ Inscrições Encerradas</Button>
-                                          ) : (
-                                              <Button variant="success" className="w-100 w-md-auto fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
-                                          )
+                                      {turma.meuStatus === 'pendente' && (
+                                          <Badge bg="warning" text="dark" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⏳ Aguardando Aprovação</Badge>
+                                      )}
+
+                                      {isExpired && !turma.meuStatus && (
+                                          <Badge bg="secondary" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⛔ Inscrições Encerradas</Badge>
                                       )}
                                   </>
                               )}

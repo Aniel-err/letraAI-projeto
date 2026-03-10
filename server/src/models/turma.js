@@ -6,10 +6,13 @@ export default (sequelize, DataTypes) => {
       Turma.belongsTo(models.User, { foreignKey: 'professorId', as: 'Professor' });
       Turma.belongsToMany(models.User, { through: 'UserTurmas', as: 'Users', foreignKey: 'turmaId' });
       Turma.hasMany(models.Redacao, { foreignKey: 'turmaId', as: 'Redacoes' });
+      Turma.hasMany(models.Proposta, { foreignKey: 'turmaId', as: 'Propostas' });
     }
   }
   Turma.init({
-    nome: DataTypes.STRING,
+    nome: { type: DataTypes.STRING, allowNull: false },
+    tema: { type: DataTypes.STRING, allowNull: true },
+    prazo: { type: DataTypes.DATE, allowNull: true }
   }, {
     sequelize,
     modelName: 'Turma',
