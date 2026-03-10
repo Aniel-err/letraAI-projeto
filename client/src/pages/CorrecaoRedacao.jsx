@@ -189,11 +189,15 @@ function CorrecaoRedacao() {
     }
 
     try {
-      await api.put(`/redacoes/${id}/corrigir`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.put(`/redacoes/${id}/corrigir`, formData);
       
       setSuccessMsg('Correção salva com sucesso!');
+      
+      const redacaoAtualizada = response.data.redacao;
+      if (redacaoAtualizada && redacaoAtualizada.imagemUrl) {
+          setImagemSeguraUrl(redacaoAtualizada.imagemUrl);
+          setDraftImage(null);
+      }
       
       setRedacao(prev => ({ 
           ...prev, 

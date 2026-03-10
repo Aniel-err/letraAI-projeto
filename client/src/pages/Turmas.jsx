@@ -74,7 +74,7 @@ function Turmas() {
           await api.put(`/turmas/${editData.id}`, { 
               nome: editData.nome, 
               tema: editData.tema || '',
-              prazo: editData.prazo ? editData.prazo : null // Resolve o crash de data vazia no banco
+              prazo: editData.prazo ? editData.prazo : null 
           });
           setShowEdit(false);
           fetchTurmas(false);
@@ -173,7 +173,6 @@ function Turmas() {
                                   </>
                               ) : (
                                   <>
-                                      {/* BOTÃO RESTAURADO: Aluno sempre vê a opção de acessar/ver propostas */}
                                       <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
                                           <Button variant="primary" className="w-100 fw-bold">📖 Ver Propostas / Acessar</Button>
                                       </Link>

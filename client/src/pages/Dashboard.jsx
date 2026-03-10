@@ -25,10 +25,9 @@ function Dashboard() {
     const cameraEditRef = useRef(null);
     const galeriaEditRef = useRef(null);
 
-    // Ajustado para aceitar URLs do Cloudinary (que começam com http)
     const getFixedAvatarUrl = (url) => {
         if (!url) return null;
-        if (url.startsWith('http')) return url; // Retorna direto se já for da nuvem
+        if (url.startsWith('http')) return url; 
         try {
             const partes = url.replace(/\\/g, '/').split('/');
             const nomeArquivo = partes[partes.length - 1];
