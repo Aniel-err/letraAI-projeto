@@ -46,7 +46,7 @@ function CorrecaoRedacao() {
   const [imagemSeguraUrl, setImagemSeguraUrl] = useState('');
   const [imagemCarregando, setImagemCarregando] = useState(true);
 
-  // Modal de Visualização Ampliada
+  // Modal de Visualização Ampliada (Sem Caneta)
   const [showEditorModal, setShowEditorModal] = useState(false);
 
   const isProfessor = user?.role === 'professor';
@@ -135,7 +135,7 @@ function CorrecaoRedacao() {
     const notaFinalEnvio = isAnulada ? 0 : total;
 
     try {
-      // Envio em JSON puro: muito mais rápido, leve e sem chances de quebrar no backend
+      // Envio SEGURO e BLINDADO (apenas dados, sem imagens ou base64)
       await api.put(`/redacoes/${id}/corrigir`, {
           notas: JSON.stringify(notas),
           total: notaFinalEnvio,
@@ -306,7 +306,7 @@ function CorrecaoRedacao() {
         </Modal.Body>
       </Modal>
 
-      {/* Modal de Zoom Blindado */}
+      {/* Modal de Zoom Blindado (SEM CANETA) */}
       <Modal show={showEditorModal} onHide={() => setShowEditorModal(false)} fullscreen>
         <Modal.Header closeButton className="bg-dark text-white border-bottom border-secondary d-flex align-items-center">
           <Modal.Title className="fw-bold me-auto d-none d-md-block">
