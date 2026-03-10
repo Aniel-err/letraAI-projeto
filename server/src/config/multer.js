@@ -16,6 +16,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+console.log("--- DEBUG CLOUDINARY ---");
+console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME ? "Sim" : "NÃO");
+console.log("API Key:", process.env.CLOUDINARY_API_KEY ? "Sim" : "NÃO");
+console.log("API Secret:", process.env.CLOUDINARY_API_SECRET ? "Sim" : "NÃO"); // Adicione esta linha!
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {

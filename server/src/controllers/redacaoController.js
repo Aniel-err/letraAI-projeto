@@ -68,34 +68,32 @@ export const updateRedacaoImage = async (req, res) => {
         
         if (!redacao) return res.status(404).json({ message: 'Redação não encontrada.' });
 
-        const podeEditar = redacao.status === 'Enviada' || redacao.status === 'Reenvio Autorizado';
-        if (!podeEditar) return res.status(400).json({ message: 'Edição não permitida para este status.' });
+        // VERIFICAÇÃO DE SEGURANÇA: Se o arquivo não chegar, o servidor daria erro 500 ao ler 'filename'
+        if (!req.file) {
+            console.error("❌ Erro: req.file está undefined. O Multer não recebeu o arquivo.");
+            return res.status(400).json({ message: 'Arquivo não enviado ou formato inválido.' });
+        }
 
-        if (!req.file) return res.status(400).json({ message: 'Arquivo de imagem não detectado.' });
-
-        redacao.imagemUrl = req.file.path; 
+        // Se usar Cloudinary, o caminho correto é req.file.path
+        const novoPath = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
+        
+        redacao.imagemUrl = novoPath;
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
-        redacao.notaC1 = null;
-        redacao.notaC2 = null;
-        redacao.notaC3 = null;
-        redacao.notaC4 = null;
-        redacao.notaC5 = null;
-        redacao.notaTotal = null;
-        
-        redacao.itensAnulatorios = [];
-        redacao.descricoes = [];
+        // Reseta as notas para nova correção
+        redacao.notaC1 = null; redacao.notaC2 = null; redacao.notaC3 = null;
+        redacao.notaC4 = null; redacao.notaC5 = null; redacao.notaTotal = null;
+        redacao.itensAnulatorios = []; redacao.descricoes = [];
 
         await redacao.save();
+        res.status(200).json({ message: 'Redação reenviada com sucesso!', redacao });
 
-        res.status(200).json({ 
-            message: 'Redação atualizada! As notas foram resetadas para uma nova correção.', 
-            redacao 
-        });
     } catch (error) { 
-        console.error("❌ Erro em updateRedacaoImage:", error);
-        res.status(500).json({ message: 'Erro interno ao processar novo upload.' }); 
+        // AQUI ESTÁ O SEGREDO: Imprimir error.message para sair o texto no log do Render
+        console.error("❌ ERRO FATAL NO UPLOAD:", error.message);
+        console.error("STACK TRACE:", error.stack);
+        res.status(500).json({ message: error.message }); 
     }
 };
 
