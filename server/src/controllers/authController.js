@@ -4,7 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
-import transporter from '../config/mailer.js'; 
+import { Resend } from 'resend'; 
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://letraai.online';
 
 export const register = async (req, res) => {
   try {
@@ -27,26 +31,34 @@ export const register = async (req, res) => {
 
     await User.create({
       nome, email, password: hashedPassword, role,
-      isVerified: false, verificationToken
+      isVerified: true, 
+      verificationToken
     });
 
-    const link = `http://localhost:5173/verificar-email?token=${verificationToken}`;
+    const link = `${FRONTEND_URL}/verificar-email?token=${verificationToken}`;
     console.log(`\nLINK ATIVAÇÃO: ${link}\n`);
 
     try {
-        await transporter.sendMail({
-            from: '"Equipe LetraAi" <noreply@letraai.com>',
+        await resend.emails.send({
+            from: 'LetrAI <nao-responder@letraai.online>', 
             to: email,
-            subject: 'Bem-vindo ao LetraAi!',
-            html: `<a href="${link}">Verificar Email</a>`
+            subject: 'Bem-vindo ao LetrAI! A sua conta foi criada',
+            html: `
+              <h2>Olá, ${nome}!</h2>
+              <p>Obrigado por se cadastrar no LetrAI. A sua conta já se encontra ativa e pronta a utilizar!</p>
+              <p>Guarde este link de verificação para os seus registos:</p>
+              <a href="${link}" style="display:inline-block; padding:10px 20px; background-color:#0d6efd; color:#fff; text-decoration:none; border-radius:5px;">Aceder ao LetrAI</a>
+            `
         });
-    } catch (e) { console.log("Erro ao enviar email real."); }
+    } catch (e) { 
+        console.error("Erro na API da Resend:", e); 
+    }
 
-    res.status(201).json({ message: 'Cadastro realizado! Verifique seu email/terminal.' });
+    return res.status(201).json({ message: 'Cadastro realizado com sucesso! Já pode fazer login.' });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Erro ao criar conta.' });
+    return res.status(500).json({ message: 'Erro ao criar conta.' });
   }
 };
 
@@ -62,32 +74,19 @@ export const login = async (req, res) => {
     if (!isPasswordValid) return res.status(401).json({ message: 'Senha incorreta.' });
 
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
-        role: user.role, 
-        nome: user.nome, 
-        avatar: user.avatar
-      },
+      { id: user.id, email: user.email, role: user.role, nome: user.nome, avatar: user.avatar },
       process.env.JWT_SECRET || 'SEU_SEGREDO',
       { expiresIn: '8h' }
     );
 
-    res.status(200).json({ 
-        message: 'Login realizado com sucesso!', 
-        token, 
-        user: { 
-            id: user.id, 
-            email: user.email, 
-            role: user.role, 
-            nome: user.nome, 
-            avatar: user.avatar
-        } 
+    return res.status(200).json({ 
+        message: 'Login realizado com sucesso!', token, 
+        user: { id: user.id, email: user.email, role: user.role, nome: user.nome, avatar: user.avatar } 
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Erro interno no servidor.' });
+    return res.status(500).json({ message: 'Erro interno no servidor.' });
   }
 };
 
@@ -102,9 +101,9 @@ export const verifyEmail = async (req, res) => {
         user.verificationToken = null;
         await user.save();
 
-        res.status(200).json({ message: 'Email verificado com sucesso!' });
+        return res.status(200).json({ message: 'Email verificado com sucesso!' });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao verificar email.' });
+        return res.status(500).json({ message: 'Erro ao verificar email.' });
     }
 };
 
@@ -120,12 +119,20 @@ export const resendVerification = async (req, res) => {
         user.verificationToken = newToken;
         await user.save();
 
-        const link = `http://localhost:5173/verificar-email?token=${newToken}`;
-        console.log(`\nNOVO LINK: ${link}\n`);
+        const link = `${FRONTEND_URL}/verificar-email?token=${newToken}`;
+        
+        try {
+            await resend.emails.send({
+                from: 'LetrAI <nao-responder@letraai.online>',
+                to: email,
+                subject: 'Reenvio - Ativação LetrAI',
+                html: `<a href="${link}">Clique aqui para verificar o seu email</a>`
+            });
+        } catch (e) { console.error("Erro Resend Reenvio:", e); }
 
-        res.status(200).json({ message: 'Novo link gerado no terminal.' });
+        return res.status(200).json({ message: 'Novo link enviado para o seu email.' });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao reenviar.' });
+        return res.status(500).json({ message: 'Erro ao reenviar.' });
     }
 };
 
@@ -144,22 +151,21 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = now;
     await user.save();
 
-    const link = `http://localhost:5173/redefinir-senha?token=${token}`;
-    console.log(`\nRECUPERAÇÃO: ${link}\n`);
+    const link = `${FRONTEND_URL}/redefinir-senha?token=${token}`;
 
     try {
-        await transporter.sendMail({
-            from: '"Equipe LetraAi" <noreply@letraai.com>',
+        await resend.emails.send({
+            from: 'LetrAI <nao-responder@letraai.online>',
             to: email,
-            subject: 'Redefinição de Senha',
-            html: `<p>Solicitação de troca de senha.</p><a href="${link}">MUDAR SENHA</a>`
+            subject: 'Redefinição de Senha - LetrAI',
+            html: `<p>Solicitou a troca de senha. Clique abaixo para redefinir:</p><br><a href="${link}">MUDAR SENHA</a>`
         });
-    } catch(e) {}
+    } catch(e) { console.error("Erro Resend Recuperação:", e); }
 
-    res.status(200).json({ message: 'Link gerado! Verifique terminal/email.' });
+    return res.status(200).json({ message: 'Link de recuperação enviado para o seu email.' });
 
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao processar.' });
+    return res.status(500).json({ message: 'Erro ao processar.' });
   }
 };
 
@@ -167,10 +173,7 @@ export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     const user = await User.findOne({ 
-        where: { 
-            resetPasswordToken: token,
-            resetPasswordExpires: { [Op.gt]: new Date() }
-        } 
+        where: { resetPasswordToken: token, resetPasswordExpires: { [Op.gt]: new Date() } } 
     });
 
     if (!user) return res.status(400).json({ message: 'Link inválido ou expirado.' });
@@ -181,9 +184,9 @@ export const resetPassword = async (req, res) => {
     user.resetPasswordExpires = null;
     await user.save();
 
-    res.status(200).json({ message: 'Senha alterada com sucesso!' });
+    return res.status(200).json({ message: 'Senha alterada com sucesso!' });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao redefinir senha.' });
+    return res.status(500).json({ message: 'Erro ao redefinir senha.' });
   }
 };
 
@@ -200,26 +203,17 @@ export const updateProfile = async (req, res) => {
         user.password = await bcrypt.hash(password, 10);
     }
     
-    // MÁGICA DA NUVEM: req.file.path agora tem o link seguro (https) gerado pelo Cloudinary
-    if (req.file) {
-        user.avatar = req.file.path;
-    }
+    if (req.file) { user.avatar = req.file.path; }
 
     await user.save();
 
-    res.status(200).json({ 
+    return res.status(200).json({ 
         message: 'Perfil atualizado!', 
-        user: { 
-            id: user.id, 
-            nome: user.nome, 
-            email: user.email, 
-            role: user.role, 
-            avatar: user.avatar 
-        }
+        user: { id: user.id, nome: user.nome, email: user.email, role: user.role, avatar: user.avatar }
     });
   } catch (error) {
     console.error("Erro no updateProfile:", error);
-    res.status(500).json({ message: 'Erro ao atualizar perfil.' });
+    return res.status(500).json({ message: 'Erro ao atualizar perfil.' });
   }
 };
 
@@ -228,17 +222,14 @@ export const getMe = async (req, res) => {
         const user = await User.findByPk(req.userData.id, {
             attributes: ['id', 'nome', 'email', 'role', 'avatar'],
             include: [{ 
-                model: Turma, 
-                as: 'Turmas', 
-                attributes: ['id', 'nome'], 
-                through: { attributes: ['status'] }
+                model: Turma, as: 'Turmas', attributes: ['id', 'nome'], through: { attributes: ['status'] }
             }] 
         });
         
         if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
         
-        res.status(200).json(user);
+        return res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao buscar perfil' });
+        return res.status(500).json({ message: 'Erro ao buscar perfil' });
     }
 };
