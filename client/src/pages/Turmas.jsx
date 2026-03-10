@@ -173,19 +173,21 @@ function Turmas() {
                                   </>
                               ) : (
                                   <>
-                                      <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
-                                          <Button variant="primary" className="w-100 fw-bold">📖 Ver Propostas / Acessar</Button>
-                                      </Link>
-                                      
-                                      {!turma.meuStatus && !isExpired && (
-                                          <Button variant="success" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
+                                      {turma.meuStatus === 'aprovado' && (
+                                          <Link to={`/turma/${turma.id}`} className="flex-fill flex-md-grow-0 text-decoration-none">
+                                              <Button variant="primary" className="w-100 fw-bold">📖 Acessar Turma</Button>
+                                          </Link>
                                       )}
                                       
                                       {turma.meuStatus === 'pendente' && (
                                           <Badge bg="warning" text="dark" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⏳ Aguardando Aprovação</Badge>
                                       )}
 
-                                      {isExpired && !turma.meuStatus && (
+                                      {!turma.meuStatus && !isExpired && (
+                                          <Button variant="success" className="flex-fill flex-md-grow-0 fw-bold" onClick={() => handleSolicitar(turma.id)}>➕ Solicitar Entrada</Button>
+                                      )}
+
+                                      {!turma.meuStatus && isExpired && (
                                           <Badge bg="secondary" className="p-2 fs-6 w-100 w-md-auto text-center align-self-center">⛔ Inscrições Encerradas</Badge>
                                       )}
                                   </>

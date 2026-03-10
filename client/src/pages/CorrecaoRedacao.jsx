@@ -135,16 +135,7 @@ function CorrecaoRedacao() {
     else setMotivoSelecionado('');
   };
 
-  const dataURItoFile = (dataURI, filename) => {
-      const arr = dataURI.split(',');
-      const mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-      return new File([u8arr], filename, {type:mime});
-  };
-
+ 
   const handleAplicarDesenho = async () => {
       if (canvasRef.current) {
           try {
@@ -184,9 +175,9 @@ function CorrecaoRedacao() {
     formData.append('status', 'Corrigida');
     
     if (draftImage) {
-        const fileToUpload = dataURItoFile(draftImage, `correcao_${id}.png`);
-        formData.append('imagem', fileToUpload);
-    }
+    const base64Data = draftImage.split(',')[1];
+    formData.append('imagemBase64', base64Data);
+}
 
     try {
       const response = await api.put(`/redacoes/${id}/corrigir`, formData);

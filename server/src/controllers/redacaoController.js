@@ -159,7 +159,17 @@ export const corrigirRedacao = async (req, res) => {
         redacao.descricoes = descricoesParsed;
         redacao.status = req.body.status || 'Corrigida';
 
-        if (req.file) {
+        if (req.body.imagemBase64) {
+            const form = new FormData();
+            form.append('image', req.body.imagemBase64);
+
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: form
+            });
+            const data = await response.json();
+            if (data.success) redacao.imagemUrl = data.data.url;
+        } else if (req.file) {
             redacao.imagemUrl = await uploadToImgBB(req.file);
         }
 

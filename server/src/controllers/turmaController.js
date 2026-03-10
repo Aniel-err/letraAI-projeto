@@ -141,16 +141,25 @@ export const getTurmaById = async (req, res) => {
 export const updateTurma = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome } = req.body; 
+        const { nome, tema, prazo } = req.body;
         
-        const turma = await Turma.findByPk(id);
-        if (!turma) return res.status(404).json({ message: 'Turma não encontrada.' });
-        if (turma.professorId !== req.userData.id) return res.status(403).json({ message: 'Sem permissão.' });
+        
+        const turma = await Turma.findByPk(id); 
+
+        if (!turma) {
+            return res.status(404).json({ message: 'Turma não encontrada.' });
+        }
 
         turma.nome = nome || turma.nome;
+        turma.tema = tema !== undefined ? tema : turma.tema;
+        turma.prazo = prazo !== undefined ? prazo : turma.prazo;
+
         await turma.save();
-        res.status(200).json({ message: 'Turma atualizada!', turma });
-    } catch (error) { res.status(500).json({ message: 'Erro ao atualizar.' }); }
+        res.status(200).json(turma);
+    } catch (error) {
+        console.error('❌ Erro ao atualizar turma:', error);
+        res.status(500).json({ message: 'Erro ao atualizar a turma.' });
+    }
 };
 
 export const deleteTurma = async (req, res) => {
