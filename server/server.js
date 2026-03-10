@@ -34,6 +34,7 @@ app.use(cors({
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
