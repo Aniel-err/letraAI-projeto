@@ -16,28 +16,25 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-console.log("--- DEBUG CLOUDINARY ---");
-console.log("Cloud Name carregado:", process.env.CLOUDINARY_CLOUD_NAME ? "Sim" : "NÃO");
-console.log("API Key carregada:", process.env.CLOUDINARY_API_KEY ? "Sim" : "NÃO");
-
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
       folder: 'letrai_uploads',
-      format: 'png', 
-      public_id: `profile-${Date.now()}`
+      format: 'png',
+      public_id: `redacao-${Date.now()}-${Math.round(Math.random() * 1E9)}`
     };
   },
 });
 
 const upload = multer({ 
   storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
     } else {
-        cb(new Error('Apenas imagens são permitidas!'), false);
+        cb(new Error('Apenas imagens (JPG, PNG) são permitidas!'), false);
     }
   }
 });

@@ -47,18 +47,17 @@ export const createRedacao = async (req, res) => {
   try {
     const userId = req.userData.id;
     const { turmaId, propostaId } = req.body;
-    
-    if (!req.file) return res.status(400).json({ message: 'Imagem obrigatória. Verifique o upload.' });
+    if (!req.file) return res.status(400).json({ message: 'Imagem da redação não recebida.' });
 
-    const imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
-    
+    const imagemUrl = req.file.path; 
+
     const novaRedacao = await Redacao.create({
       userId, turmaId, propostaId, imagemUrl, status: 'Enviada'
     });
     res.status(201).json(novaRedacao);
   } catch (error) { 
       console.error("❌ Erro em createRedacao:", error);
-      res.status(500).json({ message: 'Erro ao enviar redação.' }); 
+      res.status(500).json({ message: 'Erro ao salvar redação na nuvem.' }); 
   }
 };
 
@@ -66,14 +65,15 @@ export const updateRedacaoImage = async (req, res) => {
     try {
         const { id } = req.params;
         const redacao = await Redacao.findByPk(id);
-        if (!redacao) return res.status(404).json({ message: 'Não encontrada.' });
+        
+        if (!redacao) return res.status(404).json({ message: 'Redação não encontrada.' });
 
         const podeEditar = redacao.status === 'Enviada' || redacao.status === 'Reenvio Autorizado';
         if (!podeEditar) return res.status(400).json({ message: 'Edição não permitida para este status.' });
 
-        if (!req.file) return res.status(400).json({ message: 'Nenhuma nova imagem foi enviada no upload.' });
+        if (!req.file) return res.status(400).json({ message: 'Arquivo de imagem não detectado.' });
 
-        redacao.imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
+        redacao.imagemUrl = req.file.path; 
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
@@ -83,15 +83,19 @@ export const updateRedacaoImage = async (req, res) => {
         redacao.notaC4 = null;
         redacao.notaC5 = null;
         redacao.notaTotal = null;
+        
         redacao.itensAnulatorios = [];
         redacao.descricoes = [];
 
         await redacao.save();
 
-        res.status(200).json({ message: 'Redação atualizada e correções resetadas!', redacao });
+        res.status(200).json({ 
+            message: 'Redação atualizada! As notas foram resetadas para uma nova correção.', 
+            redacao 
+        });
     } catch (error) { 
         console.error("❌ Erro em updateRedacaoImage:", error);
-        res.status(500).json({ message: 'Erro ao atualizar a imagem da redação.' }); 
+        res.status(500).json({ message: 'Erro interno ao processar novo upload.' }); 
     }
 };
 
