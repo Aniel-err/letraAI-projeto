@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import api from '../services/api'; 
+import api from '../services/api';
 import { Container, Form, Button, Alert, Card, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 function UploadRedacao() {
   const [tema, setTema] = useState('');
   const [file, setFile] = useState(null);
-  
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const navigate = useNavigate(); 
+
+  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]); 
+    setFile(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
@@ -28,19 +28,16 @@ function UploadRedacao() {
     setLoading(true);
 
     const formData = new FormData();
-    formData.append('tema', tema); 
-    formData.append('imagem', file); 
+    formData.append('tema', tema);
+    formData.append('imagem', file);
 
     try {
-      await api.post('/redacoes/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data', 
-          }
-      });
 
-      
+      await api.post('/redacoes/upload', formData);
+
+
       navigate('/dashboard');
-      
+
     } catch (err) {
       setLoading(false);
       setError(err.response?.data?.message || 'Erro ao enviar redação.');
@@ -49,13 +46,13 @@ function UploadRedacao() {
 
   return (
     <Container className="d-flex flex-column justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-      
+
       <div style={{ width: '30rem' }}>
-        <Button 
-          variant="outline-secondary" 
-          size="sm" 
-          onClick={() => navigate('/dashboard')} 
-          className="mb-3" 
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          className="mb-3"
         >
           &larr; Voltar ao Dashboard
         </Button>
@@ -64,14 +61,14 @@ function UploadRedacao() {
       <Card style={{ width: '30rem' }}>
         <Card.Body>
           <h2 className="text-center mb-4">Enviar Redação</h2>
-          
+
           <Form onSubmit={handleSubmit}>
-            
+
             <Form.Group className="mb-3" controlId="formTema">
               <Form.Label>Tema da Redação</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="Ex: Desafios da educação..." 
+              <Form.Control
+                type="text"
+                placeholder="Ex: Desafios da educação..."
                 value={tema}
                 onChange={(e) => setTema(e.target.value)}
               />
@@ -79,14 +76,14 @@ function UploadRedacao() {
 
             <Form.Group className="mb-3" controlId="formImagem">
               <Form.Label>Imagem da Redação (PNG ou JPG)</Form.Label>
-              <Form.Control 
-                type="file" 
-                accept="image/png, image/jpeg" 
+              <Form.Control
+                type="file"
+                accept="image/png, image/jpeg"
                 onChange={handleFileChange}
-                required 
+                required
               />
             </Form.Group>
-            
+
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Button variant="primary" type="submit" className="w-100" disabled={loading}>
@@ -100,7 +97,7 @@ function UploadRedacao() {
               )}
             </Button>
           </Form>
-          
+
         </Card.Body>
       </Card>
     </Container>
