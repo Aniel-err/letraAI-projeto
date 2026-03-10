@@ -1,26 +1,40 @@
 import db from '../models/index.js';
-import axios from 'axios';
 
 const { Redacao, User, Turma, Proposta } = db;
 
-// --- FUNÇÃO MÁGICA DE UPLOAD PARA O IMGBB ---
 const uploadToImgBB = async (file) => {
-    if (!file) throw new Error("Nenhum ficheiro recebido.");
+    if (!file || !file.buffer) throw new Error("O ficheiro não chegou na memória (buffer).");
 
-    // Converte o buffer da memória RAM para Base64 (formato que o ImgBB aceita)
-    const base64Image = file.buffer.toString('base64');
-    
-    // Prepara os dados para envio nativo
-    const params = new URLSearchParams();
-    params.append('image', base64Image);
+    if (!process.env.IMGBB_API_KEY) {
+        throw new Error("A chave IMGBB_API_KEY não foi encontrada no Render.");
+    }
 
     try {
-        const response = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, params);
-        // Retorna a URL direta da imagem hospedada
-        return response.data.data.url;
+        console.log("Preparando arquivo binário para o ImgBB...");
+        
+        const blob = new Blob([file.buffer], { type: file.mimetype });
+        
+        const form = new FormData();
+        form.append('image', blob, file.originalname);
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: form
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            console.error("❌ O ImgBB recusou o arquivo:", data);
+            throw new Error("O ImgBB rejeitou o formato ou tamanho da imagem.");
+        }
+        
+        console.log("✅ Upload ImgBB Concluído com sucesso:", data.data.url);
+        return data.data.url;
+
     } catch (error) {
-        console.error("Erro na API ImgBB:", error.response?.data || error.message);
-        throw new Error("Falha ao hospedar imagem no ImgBB.");
+        console.error("❌ Falha fatal ao contactar ImgBB:", error.message);
+        throw new Error("Falha no upload para a nuvem.");
     }
 };
 
@@ -71,7 +85,6 @@ export const createRedacao = async (req, res) => {
     
     if (!req.file) return res.status(400).json({ message: 'Imagem obrigatória.' });
 
-    // Envia para o ImgBB e pega a URL
     const imagemUrl = await uploadToImgBB(req.file);
 
     const novaRedacao = await Redacao.create({
@@ -92,7 +105,6 @@ export const updateRedacaoImage = async (req, res) => {
 
         if (!req.file) return res.status(400).json({ message: 'Nenhuma nova imagem foi enviada.' });
 
-        // Envia para o ImgBB
         const imagemUrl = await uploadToImgBB(req.file);
         
         redacao.imagemUrl = imagemUrl; 
@@ -148,7 +160,6 @@ export const corrigirRedacao = async (req, res) => {
     redacao.status = req.body.status || 'Corrigida';
     
     if (req.file) {
-        // Envia para o ImgBB se o professor riscou a imagem
         redacao.imagemUrl = await uploadToImgBB(req.file);
     }
 
