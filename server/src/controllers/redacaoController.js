@@ -47,8 +47,10 @@ export const createRedacao = async (req, res) => {
   try {
     const userId = req.userData.id;
     const { turmaId, propostaId } = req.body;
-    if (!req.file) return res.status(400).json({ message: 'Imagem da redação não recebida.' });
+    
+    if (!req.file) return res.status(400).json({ message: 'Imagem obrigatória. O ficheiro não chegou ao servidor.' });
 
+    // AQUI ESTÁ A CORREÇÃO: Pega o link da nuvem direto do Cloudinary
     const imagemUrl = req.file.path; 
 
     const novaRedacao = await Redacao.create({
@@ -56,8 +58,8 @@ export const createRedacao = async (req, res) => {
     });
     res.status(201).json(novaRedacao);
   } catch (error) { 
-      console.error("❌ Erro em createRedacao:", error);
-      res.status(500).json({ message: 'Erro ao salvar redação na nuvem.' }); 
+      console.error("❌ Erro em createRedacao:", error.message);
+      res.status(500).json({ message: 'Erro ao enviar a redação.' }); 
   }
 };
 
@@ -67,24 +69,31 @@ export const updateRedacaoImage = async (req, res) => {
         const redacao = await Redacao.findByPk(id);
         if (!redacao) return res.status(404).json({ message: 'Não encontrada.' });
 
-        // PROTEÇÃO: Verifica se o Multer realmente recebeu o ficheiro
-        if (!req.file) return res.status(400).json({ message: 'Imagem não recebida.' });
+        const podeEditar = redacao.status === 'Enviada' || redacao.status === 'Reenvio Autorizado';
+        if (!podeEditar) return res.status(400).json({ message: 'Edição não permitida para este status.' });
 
-        // USE .path PARA CLOUDINARY
+        if (!req.file) return res.status(400).json({ message: 'Nenhuma nova imagem foi enviada.' });
+
+        // AQUI ESTÁ A CORREÇÃO: Atualiza a URL com o link novo do Cloudinary
         redacao.imagemUrl = req.file.path; 
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
-        // Reset de notas
-        redacao.notaC1 = null; redacao.notaC2 = null; redacao.notaC3 = null;
-        redacao.notaC4 = null; redacao.notaC5 = null; redacao.notaTotal = null;
-        redacao.itensAnulatorios = []; redacao.descricoes = [];
+        redacao.notaC1 = null;
+        redacao.notaC2 = null;
+        redacao.notaC3 = null;
+        redacao.notaC4 = null;
+        redacao.notaC5 = null;
+        redacao.notaTotal = null;
+        redacao.itensAnulatorios = [];
+        redacao.descricoes = [];
 
         await redacao.save();
-        res.status(200).json({ message: 'Redação atualizada!', redacao });
+
+        res.status(200).json({ message: 'Redação atualizada e correções resetadas!', redacao });
     } catch (error) { 
-        console.error("❌ Erro em updateRedacaoImage:", error);
-        res.status(500).json({ message: 'Erro interno ao processar imagem.' }); 
+        console.error("❌ Erro em updateRedacaoImage:", error.message);
+        res.status(500).json({ message: 'Erro ao atualizar a imagem.' }); 
     }
 };
 
@@ -135,7 +144,8 @@ export const corrigirRedacao = async (req, res) => {
     redacao.status = status || 'Corrigida';
     
     if (req.file) {
-        redacao.imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
+        // AQUI ESTÁ A CORREÇÃO: Caso o professor edite a imagem, salva a versão do Cloudinary
+        redacao.imagemUrl = req.file.path;
     }
 
     await redacao.save();
