@@ -8,7 +8,7 @@ import { ThemeProvider } from './context/ThemeContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/letraai">
+    <BrowserRouter> 
       <AuthProvider>
         <ThemeProvider> 
           <App />
