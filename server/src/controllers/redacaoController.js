@@ -63,36 +63,45 @@ export const createRedacao = async (req, res) => {
 
 export const updateRedacaoImage = async (req, res) => {
     try {
+        console.log("--- [DEBUG] INÍCIO DO PROCESSO DE UPLOAD ---");
         const { id } = req.params;
-        const redacao = await Redacao.findByPk(id);
-        
-        if (!redacao) return res.status(404).json({ message: 'Redação não encontrada.' });
+        console.log("ID recebido na URL:", id);
 
-        // VERIFICAÇÃO DE SEGURANÇA: Se o arquivo não chegar, o servidor daria erro 500 ao ler 'filename'
+        // 1. Verifica se o arquivo chegou do Multer/Cloudinary
         if (!req.file) {
-            console.error("❌ Erro: req.file está undefined. O Multer não recebeu o arquivo.");
-            return res.status(400).json({ message: 'Arquivo não enviado ou formato inválido.' });
+            console.log("❌ ERRO: req.file está undefined. Verifique se o frontend está enviando o campo como 'imagem'.");
+            return res.status(400).json({ message: 'Arquivo não recebido pelo servidor.' });
+        }
+        console.log("Arquivo recebido pelo Multer:", req.file.originalname);
+        console.log("URL gerada pelo Cloudinary (path):", req.file.path);
+
+        // 2. Busca a redação no banco
+        const redacao = await Redacao.findByPk(id);
+        if (!redacao) {
+            console.log(`❌ ERRO: Nenhuma redação encontrada com o ID ${id} no banco.`);
+            return res.status(404).json({ message: `Redação ID ${id} não encontrada.` });
         }
 
-        // Se usar Cloudinary, o caminho correto é req.file.path
-        const novoPath = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
-        
-        redacao.imagemUrl = novoPath;
+        // 3. Atualização dos campos
+        redacao.imagemUrl = req.file.path; // Usa o path da nuvem
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
-        // Reseta as notas para nova correção
+        // Reset de notas para nova correção
         redacao.notaC1 = null; redacao.notaC2 = null; redacao.notaC3 = null;
         redacao.notaC4 = null; redacao.notaC5 = null; redacao.notaTotal = null;
         redacao.itensAnulatorios = []; redacao.descricoes = [];
 
         await redacao.save();
-        res.status(200).json({ message: 'Redação reenviada com sucesso!', redacao });
+        console.log("✅ SUCESSO: Banco de dados atualizado com o link da nuvem!");
+
+        res.status(200).json({ message: 'Redação enviada!', redacao });
 
     } catch (error) { 
-        // AQUI ESTÁ O SEGREDO: Imprimir error.message para sair o texto no log do Render
-        console.error("❌ ERRO FATAL NO UPLOAD:", error.message);
-        console.error("STACK TRACE:", error.stack);
+        // Força o erro a aparecer como texto claro no log do Render
+        console.log("--- [DEBUG] ERRO FATAL DETECTADO ---");
+        console.log("Mensagem do Erro:", error.message);
+        console.error("Stack do Erro:", error.stack);
         res.status(500).json({ message: error.message }); 
     }
 };
