@@ -47,16 +47,18 @@ export const createRedacao = async (req, res) => {
   try {
     const userId = req.userData.id;
     const { turmaId, propostaId } = req.body;
-    if (!req.file) return res.status(400).json({ message: 'Imagem obrigatória.' });
+    
+    if (!req.file) return res.status(400).json({ message: 'Imagem obrigatória. Verifique o upload.' });
 
-    const imagemUrl = `/uploads/${req.file.filename}`;
+    const imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
+    
     const novaRedacao = await Redacao.create({
       userId, turmaId, propostaId, imagemUrl, status: 'Enviada'
     });
     res.status(201).json(novaRedacao);
   } catch (error) { 
       console.error("❌ Erro em createRedacao:", error);
-      res.status(500).json({ message: 'Erro ao enviar.' }); 
+      res.status(500).json({ message: 'Erro ao enviar redação.' }); 
   }
 };
 
@@ -69,7 +71,9 @@ export const updateRedacaoImage = async (req, res) => {
         const podeEditar = redacao.status === 'Enviada' || redacao.status === 'Reenvio Autorizado';
         if (!podeEditar) return res.status(400).json({ message: 'Edição não permitida para este status.' });
 
-        redacao.imagemUrl = `/uploads/${req.file.filename}`;
+        if (!req.file) return res.status(400).json({ message: 'Nenhuma nova imagem foi enviada no upload.' });
+
+        redacao.imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
         redacao.status = 'Enviada';
         redacao.editedAt = new Date();
 
@@ -87,7 +91,7 @@ export const updateRedacaoImage = async (req, res) => {
         res.status(200).json({ message: 'Redação atualizada e correções resetadas!', redacao });
     } catch (error) { 
         console.error("❌ Erro em updateRedacaoImage:", error);
-        res.status(500).json({ message: 'Erro ao atualizar imagem.' }); 
+        res.status(500).json({ message: 'Erro ao atualizar a imagem da redação.' }); 
     }
 };
 
@@ -138,7 +142,7 @@ export const corrigirRedacao = async (req, res) => {
     redacao.status = status || 'Corrigida';
     
     if (req.file) {
-        redacao.imagemUrl = `/uploads/${req.file.filename}`;
+        redacao.imagemUrl = req.file.path ? req.file.path : `/uploads/${req.file.filename}`;
     }
 
     await redacao.save();
