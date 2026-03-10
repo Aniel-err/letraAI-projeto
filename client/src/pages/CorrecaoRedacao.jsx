@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Container, Row, Col, Card, Form, Button, Image, Spinner, Alert, Badge, InputGroup, Modal, ListGroup } from 'react-bootstrap';
-import { ReactSketchCanvas } from 'react-sketch-canvas'; 
 
 const niveisCompetencia = [
   { label: "Nível 0: 0 pontos (Desconhecimento total)", value: 0 },
@@ -28,7 +27,6 @@ function CorrecaoRedacao() {
   const { id } = useParams(); 
   const { user } = useAuth(); 
   const navigate = useNavigate();
-  const canvasRef = useRef(null); 
   
   const [redacao, setRedacao] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,13 +46,8 @@ function CorrecaoRedacao() {
   const [imagemSeguraUrl, setImagemSeguraUrl] = useState('');
   const [imagemCarregando, setImagemCarregando] = useState(true);
 
-  // Estados do Editor e da Memória de Desenho
+  // Modal de Visualização Ampliada
   const [showEditorModal, setShowEditorModal] = useState(false);
-  const [strokeColor, setStrokeColor] = useState('#ff0000'); 
-  const [eraserMode, setEraserMode] = useState(false);
-  
-  const [draftImage, setDraftImage] = useState(null); 
-  const [draftPaths, setDraftPaths] = useState([]);  
 
   const isProfessor = user?.role === 'professor';
 
@@ -114,15 +107,6 @@ function CorrecaoRedacao() {
     setTotal(novoTotal);
   }, [notas]);
 
-  useEffect(() => {
-      if (showEditorModal && isProfessor && canvasRef.current && draftPaths.length > 0) {
-          setTimeout(() => {
-              canvasRef.current.clearCanvas(); 
-              canvasRef.current.loadPaths(draftPaths);
-          }, 100);
-      }
-  }, [showEditorModal, isProfessor, draftPaths]);
-
   const handleNotaChange = (competencia, valor) => setNotas(prev => ({ ...prev, [competencia]: parseInt(valor, 10) }));
   const handleAdicionarDescricao = () => setDescricoes(prev => [...prev, { id: Date.now(), texto: '' }]);
   const handleDescricaoChange = (id, novoTexto) => setDescricoes(prev => prev.map(d => d.id === id ? { ...d, texto: novoTexto } : d));
@@ -133,23 +117,6 @@ function CorrecaoRedacao() {
     setIsAnulada(checked);
     if (checked) setNotas({ c1: 0, c2: 0, c3: 0, c4: 0, c5: 0 });
     else setMotivoSelecionado('');
-  };
-
- 
-  const handleAplicarDesenho = async () => {
-      if (canvasRef.current) {
-          try {
-              const exportedImage = await canvasRef.current.exportImage("png");
-              const paths = await canvasRef.current.exportPaths();
-              
-              setDraftImage(exportedImage); 
-              setDraftPaths(paths);         
-              
-              setShowEditorModal(false);    
-          } catch (e) {
-              console.error("Erro ao exportar desenho:", e);
-          }
-      }
   };
 
   const handleSalvarCorrecao = async () => {
@@ -167,28 +134,17 @@ function CorrecaoRedacao() {
     const arrayDescricoes = descricoes.map(d => d.texto).filter(t => t && t.trim() !== '');
     const notaFinalEnvio = isAnulada ? 0 : total;
 
-    const formData = new FormData();
-    formData.append('notas', JSON.stringify(notas));
-    formData.append('total', notaFinalEnvio);
-    formData.append('itensAnulatorios', JSON.stringify(arrayAnulatorios));
-    formData.append('descricoes', JSON.stringify(arrayDescricoes));
-    formData.append('status', 'Corrigida');
-    
-    if (draftImage) {
-    const base64Data = draftImage.split(',')[1];
-    formData.append('imagemBase64', base64Data);
-}
-
     try {
-      const response = await api.put(`/redacoes/${id}/corrigir`, formData);
+      // Envio em JSON puro: muito mais rápido, leve e sem chances de quebrar no backend
+      await api.put(`/redacoes/${id}/corrigir`, {
+          notas: JSON.stringify(notas),
+          total: notaFinalEnvio,
+          itensAnulatorios: JSON.stringify(arrayAnulatorios),
+          descricoes: JSON.stringify(arrayDescricoes),
+          status: 'Corrigida'
+      });
       
       setSuccessMsg('Correção salva com sucesso!');
-      
-      const redacaoAtualizada = response.data.redacao;
-      if (redacaoAtualizada && redacaoAtualizada.imagemUrl) {
-          setImagemSeguraUrl(redacaoAtualizada.imagemUrl);
-          setDraftImage(null);
-      }
       
       setRedacao(prev => ({ 
           ...prev, 
@@ -240,13 +196,13 @@ function CorrecaoRedacao() {
                 style={{ minHeight: '600px', backgroundColor: 'var(--bs-tertiary-bg)', textAlign: 'center', cursor: 'zoom-in' }} 
                 className="d-flex flex-column align-items-center justify-content-center p-0 overflow-hidden"
                 onClick={() => { setZoomLevel(1); setShowEditorModal(true); }}
-                title="Clique para abrir o Editor e a Lupa"
+                title="Clique para abrir a Lupa"
             >
               {imagemCarregando ? (
                   <div className="py-5"><Spinner animation="border" variant="primary" /><p className="mt-3 text-body">A transferir imagem segura...</p></div>
               ) : imagemSeguraUrl ? (
                   <Image 
-                    src={draftImage || imagemSeguraUrl} 
+                    src={imagemSeguraUrl} 
                     fluid 
                     style={{ maxHeight: '800px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} 
                   />
@@ -255,7 +211,7 @@ function CorrecaoRedacao() {
               )}
             </Card.Body>
             <Card.Footer className="text-center text-light bg-primary">
-                <small className="fw-bold">🖱️ Clique na imagem para usar o Zoom e as Ferramentas de Correção!</small>
+                <small className="fw-bold">🖱️ Clique na imagem para usar o Zoom e ler melhor!</small>
             </Card.Footer>
           </Card>
         </Col>
@@ -350,10 +306,11 @@ function CorrecaoRedacao() {
         </Modal.Body>
       </Modal>
 
+      {/* Modal de Zoom Blindado */}
       <Modal show={showEditorModal} onHide={() => setShowEditorModal(false)} fullscreen>
         <Modal.Header closeButton className="bg-dark text-white border-bottom border-secondary d-flex align-items-center">
           <Modal.Title className="fw-bold me-auto d-none d-md-block">
-              {isProfessor ? '🎨 Estúdio de Correção' : '🔍 Visualização Ampliada'}
+              🔍 Visualização Ampliada
           </Modal.Title>
           
           <div className="d-flex flex-wrap gap-2 align-items-center me-3">
@@ -363,36 +320,6 @@ function CorrecaoRedacao() {
                 <Button variant="link" className="text-white text-decoration-none p-0 fs-5" onClick={() => setZoomLevel(prev => prev + 0.25)} title="Aumentar Zoom">➕</Button>
                 <Button variant="outline-light" size="sm" className="ms-2" onClick={() => setZoomLevel(1)}>Reset</Button>
               </div>
-
-              {isProfessor && (
-                  <>
-                      <div className="vr d-none d-md-block mx-2 text-light"></div>
-                      
-                      <Button variant={eraserMode ? 'primary' : 'outline-light'} size="sm" onClick={() => {
-                          setEraserMode(!eraserMode);
-                          canvasRef.current?.eraseMode(!eraserMode);
-                      }}>
-                          {eraserMode ? '🖍️ Voltar p/ Caneta' : '🧼 Borracha'}
-                      </Button>
-                      
-                      <Form.Control
-                          type="color"
-                          value={strokeColor}
-                          onChange={(e) => setStrokeColor(e.target.value)}
-                          title="Cor da Caneta"
-                          style={{ width: '40px', height: '35px', padding: '2px', cursor: 'pointer' }}
-                      />
-                      
-                      <Button variant="outline-warning" size="sm" onClick={() => canvasRef.current?.undo()} title="Desfazer">↩️</Button>
-                      <Button variant="outline-danger" size="sm" onClick={() => canvasRef.current?.clearCanvas()} title="Apagar Tudo">🗑️</Button>
-                      
-                      <div className="vr d-none d-md-block mx-2 text-light"></div>
-                      
-                      <Button variant="success" size="sm" className="fw-bold" onClick={handleAplicarDesenho}>
-                          💾 Aplicar Desenho e Voltar
-                      </Button>
-                  </>
-              )}
           </div>
         </Modal.Header>
 
@@ -402,30 +329,17 @@ function CorrecaoRedacao() {
                  transform: `scale(${zoomLevel})`, 
                  transformOrigin: 'top center', 
                  transition: 'transform 0.2s ease-out',
-                 width: '800px',
-                 height: '1131px',
+                 width: 'auto',
+                 height: 'auto',
+                 maxWidth: '90%',
                  backgroundColor: '#fff',
                  boxShadow: '0 0 15px rgba(0,0,0,0.5)'
              }}>
-                 {isProfessor ? (
-                     <ReactSketchCanvas
-                        ref={canvasRef}
-                        strokeWidth={4}
-                        eraserWidth={20}
-                        strokeColor={strokeColor}
-                        backgroundImage={imagemSeguraUrl} 
-                        preserveBackgroundImageAspectRatio="contain"
-                        style={{ cursor: eraserMode ? 'cell' : 'crosshair', border: 'none' }}
-                        width="800px" 
-                        height="1131px"
-                     />
-                 ) : (
-                     <img 
-                       src={draftImage || imagemSeguraUrl} 
-                       alt="Redação com Zoom" 
-                       style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                     />
-                 )}
+                 <img 
+                   src={imagemSeguraUrl} 
+                   alt="Redação Ampliada" 
+                   style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                 />
              </div>
            )}
         </Modal.Body>
