@@ -19,8 +19,20 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const allowedOrigins = [
+  'https://letraai.online',
+  'https://www.letraai.online',
+  'http://localhost:5173' 
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*', 
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado pela política de CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
