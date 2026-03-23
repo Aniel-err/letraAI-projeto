@@ -27,6 +27,12 @@ body {
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.bg-if-success {
+    background-color: #32A041 !important;
+    color: white !important; 
+}
+
+
 .card {
   background-color: var(--card-bg) !important;
   color: var(--app-text) !important;

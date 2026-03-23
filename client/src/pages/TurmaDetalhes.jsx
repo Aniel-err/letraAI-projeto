@@ -252,7 +252,7 @@ function TurmaDetalhes() {
                                                             {isExpired && <Badge bg="danger" className="ms-2">Encerrado</Badge>}
                                                         </p>
                                                     ) : <p className="mb-0 text-success fw-bold">⏳ Sem prazo de entrega</p>}
-                                                    {redacaoEnviada && <Badge bg="sucess" className="mt-2 p-2">Status do seu envio: {redacaoEnviada.status}</Badge>}
+                                                    {redacaoEnviada && <Badge className="mt-2 p-2 bg-if-success">Status do seu envio: {redacaoEnviada.status}</Badge>}
                                                 </div>
                                                 <div className="d-flex flex-wrap gap-2 w-100 justify-content-md-end">
                                                     <Button variant="primary" size="sm" className="fw-bold flex-fill flex-md-grow-0" onClick={() => {
