@@ -30,7 +30,7 @@ function AppNavbar() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
+          <Nav className="me-auto mb-2 mb-lg-0 mt-3 mt-lg-0">
             <Nav.Link as={Link} to="/dashboard" className="fw-semibold">Dashboard</Nav.Link>
             
             {user.role === 'professor' ? (
@@ -40,20 +40,25 @@ function AppNavbar() {
             )}
           </Nav>
 
-          <Nav className="align-items-center gap-3">
-            <Button 
-                variant={theme === 'light' ? 'outline-dark' : 'outline-light'} 
-                onClick={toggleTheme} 
-                className="d-flex align-items-center justify-content-center"
-                style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-            >
-               {theme === 'light' ? '🌙' : '☀️'}
-            </Button>
+          <hr className="d-lg-none text-secondary" />
 
-            <Dropdown align="end">
-              <Dropdown.Toggle variant="transparent" className="d-flex align-items-center border-0 p-0 shadow-none">
+          <Nav className="align-items-start align-items-lg-center gap-3 mt-2 mt-lg-0">
+            <div className="d-flex align-items-center gap-2">
+                <Button 
+                    variant={theme === 'light' ? 'outline-dark' : 'outline-light'} 
+                    onClick={toggleTheme} 
+                    className="d-flex align-items-center justify-content-center"
+                    style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+                >
+                   {theme === 'light' ? '🌙' : '☀️'}
+                </Button>
+                <span className="d-lg-none fw-bold text-body-secondary ms-2">Alterar Tema</span>
+            </div>
+
+            <Dropdown align="end" className="w-100 w-lg-auto mt-2 mt-lg-0">
+              <Dropdown.Toggle variant="transparent" className="d-flex align-items-center border-0 p-0 shadow-none w-100">
                 <div 
-                    className="d-flex justify-content-center align-items-center bg-primary text-white fw-bold rounded-circle me-2 shadow-sm"
+                    className="d-flex justify-content-center align-items-center bg-primary text-white fw-bold rounded-circle me-2 shadow-sm flex-shrink-0"
                     style={{ width: '35px', height: '35px', fontSize: '14px' }}
                 >
                     {getInitials(user.nome)}
@@ -61,11 +66,11 @@ function AppNavbar() {
                 <span style={{ color: 'var(--app-text)', fontWeight: 'bold' }}>{user.nome}</span>
               </Dropdown.Toggle>
 
-              <Dropdown.Menu>
+              <Dropdown.Menu className="w-100 border-0 shadow-sm mt-2">
                 <Dropdown.Header>Perfil: {user.role}</Dropdown.Header>
                 <Dropdown.Item as={Link} to="/perfil">Meu Perfil</Dropdown.Item>
                 <Dropdown.Divider />
-                <Dropdown.Item onClick={handleLogout} className="text-danger">Sair</Dropdown.Item>
+                <Dropdown.Item onClick={handleLogout} className="text-danger fw-bold">Sair do Sistema</Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </Nav>

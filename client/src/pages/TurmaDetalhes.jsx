@@ -37,6 +37,13 @@ function TurmaDetalhes() {
     const [alunoRedacoes, setAlunoRedacoes] = useState([]);
     const [alunoSelecionadoNome, setAlunoSelecionadoNome] = useState('');
 
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.substring(0, 2).toUpperCase();
+    };
+
     const formatForInput = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -195,8 +202,13 @@ function TurmaDetalhes() {
     const pendentes = turma?.Alunos?.filter(a => a.turmaStatus === 'pendente') || [];
     const aprovados = turma?.Alunos?.filter(a => a.turmaStatus === 'aprovado') || [];
 
-    const AvatarAluno = ({ src }) => (
-        <img src={src || 'https://via.placeholder.com/40?text=?'} alt="Perfil" className="rounded-circle me-3 border" width="40" height="40" style={{ objectFit: 'cover' }} />
+    const AvatarAluno = ({ nome }) => (
+        <div
+            className="d-flex justify-content-center align-items-center bg-primary text-white fw-bold rounded-circle me-3 shadow-sm flex-shrink-0"
+            style={{ width: '40px', height: '40px', fontSize: '16px' }}
+        >
+            {getInitials(nome)}
+        </div>
     );
 
     return (
@@ -219,7 +231,7 @@ function TurmaDetalhes() {
                             <Card.Header className="bg-info text-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-3">
                                 <h5 className="m-0 fw-bold">📚 Propostas de Redação</h5>
                                 {user?.role === 'professor' && (
-                                    <Button variant="light" size="sm" className="fw-bold text-info w-100 w-sm-auto" onClick={() => setShowPropostaModal(true)}>
+                                    <Button variant="primary" size="sm" className="fw-bold w-100 w-sm-auto shadow" onClick={() => setShowPropostaModal(true)}>
                                         ➕ Adicionar Proposta
                                     </Button>
                                 )}
@@ -311,7 +323,7 @@ function TurmaDetalhes() {
                                             {pendentes.map(aluno => (
                                                 <ListGroup.Item key={aluno.id} className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center py-3 gap-2 bg-body text-body">
                                                     <div className="d-flex align-items-center mb-2 mb-sm-0">
-                                                        <AvatarAluno src={aluno.avatar} />
+                                                        <AvatarAluno nome={aluno.nome} />
                                                         <span>{aluno.nome} <br className="d-block d-sm-none" /><small className="text-muted">({aluno.email})</small></span>
                                                     </div>
                                                     <div className="d-flex gap-2 w-100 justify-content-sm-end">
@@ -336,7 +348,7 @@ function TurmaDetalhes() {
                                                     return (
                                                         <ListGroup.Item key={aluno.id} className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center py-3 gap-2 bg-body text-body">
                                                             <div className="d-flex align-items-center mb-2 mb-sm-0">
-                                                                <AvatarAluno src={aluno.avatar} />
+                                                                <AvatarAluno nome={aluno.nome} />
                                                                 <span className="fw-semibold me-2">{aluno.nome}</span>
                                                                 {temReenvioPendente && <Badge bg="warning" text="dark" className="fs-6 animation-pulse shadow-sm">⚠️ Solicitou Reenvio</Badge>}
                                                             </div>
