@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Card, Button, Spinner, Form, Alert } from 'react-bootstrap';
@@ -15,37 +15,50 @@ function VerifyEmail() {
   const [resendStatus, setResendStatus] = useState('');
   const [resendMsg, setResendMsg] = useState('');
 
+  // 1. Trava do Strict Mode
+  const effectRan = useRef(false);
+
   useEffect(() => {
     if (!token) return;
 
-    const verify = async () => {
-      try {
-        await axios.post('http://localhost:3001/api/auth/verify-email', { token });
-        setStatus('success');
-      } catch (error) {
-        console.error("Falha na verificação:", error);
-        setStatus('error');
-      }
-    };
+    if (effectRan.current === false) {
+      const verify = async () => {
+        try {
+          // Rota relativa para funcionar com o Nginx no servidor online
+          await axios.post('/api/auth/verify-email', { token }); 
+          setStatus('success');
+        } catch (error) {
+          console.error("Falha na verificação:", error);
+          setStatus('error');
+        }
+      };
 
-    verify();
+      verify();
+
+      return () => {
+        effectRan.current = true;
+      };
+    }
   }, [token]);
 
+  // 2. Lógica do cronômetro (resolve o erro do ESLint 'setCountdown' não usado)
   useEffect(() => {
+    let timer;
     if (status === 'success') {
-      const timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-
-      if (countdown === 0) {
-        navigate('/login', { 
-            state: { message: 'Email confirmado! Por favor, entre com sua senha.', emailPreenchido: '' } 
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            navigate('/login');
+            return 0;
+          }
+          return prev - 1;
         });
-      }
-
-      return () => clearInterval(timer);
+      }, 1000);
     }
-  }, [status, countdown, navigate]);
+    return () => clearInterval(timer); // Limpa o timer se o componente desmontar
+  }, [status, navigate]);
+
 
   const handleResend = async (e) => {
     e.preventDefault();
@@ -53,7 +66,8 @@ function VerifyEmail() {
     
     setResendStatus('loading');
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/resend-verification', { email });
+      // Rota relativa para o reenvio
+      const response = await axios.post('/api/auth/resend-verification', { email });
       setResendStatus('success');
       setResendMsg(response.data.message);
     } catch (err) {

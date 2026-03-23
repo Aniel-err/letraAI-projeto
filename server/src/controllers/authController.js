@@ -31,7 +31,7 @@ export const register = async (req, res) => {
 
     await User.create({
       nome, email, password: hashedPassword, role,
-      isVerified: true, 
+      isVerified: false, 
       verificationToken
     });
 
@@ -47,7 +47,7 @@ export const register = async (req, res) => {
               <h2>Olá, ${nome}!</h2>
               <p>Obrigado por se cadastrar no LetrAI. A sua conta já se encontra ativa e pronta a utilizar!</p>
               <p>Guarde este link de verificação para os seus registos:</p>
-              <a href="${link}" style="display:inline-block; padding:10px 20px; background-color:#0d6efd; color:#fff; text-decoration:none; border-radius:5px;">Aceder ao LetrAI</a>
+              <a href="${link}" style="display:inline-block; padding:10px 20px; background-color:#0d6efd; color:#fff; text-decoration:none; border-radius:5px;">Ir para o LetrAI</a>
             `
         });
     } catch (e) { 
