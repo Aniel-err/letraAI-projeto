@@ -86,7 +86,7 @@ function TurmaDetalhes() {
         try {
             await api.put(`/redacoes/${redacaoId}/autorizar-reenvio`);
             setMsg('Reenvio autorizado!');
-            fetchRedacoesGerais(); // Atualiza a badge amarela
+            fetchRedacoesGerais();
             const res = await api.get('/redacoes');
             setAlunoRedacoes(res.data.filter(r => r.userId === alunoRedacoes[0]?.userId && r.turmaId === Number(id)));
         } catch { alert('Erro ao autorizar.'); }

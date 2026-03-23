@@ -15,7 +15,6 @@ function VerifyEmail() {
   const [resendStatus, setResendStatus] = useState('');
   const [resendMsg, setResendMsg] = useState('');
 
-  // 1. Trava do Strict Mode
   const effectRan = useRef(false);
 
   useEffect(() => {
@@ -24,7 +23,6 @@ function VerifyEmail() {
     if (effectRan.current === false) {
       const verify = async () => {
         try {
-          // Rota relativa para funcionar com o Nginx no servidor online
           await axios.post('/api/auth/verify-email', { token }); 
           setStatus('success');
         } catch (error) {
@@ -41,7 +39,6 @@ function VerifyEmail() {
     }
   }, [token]);
 
-  // 2. Lógica do cronômetro (resolve o erro do ESLint 'setCountdown' não usado)
   useEffect(() => {
     let timer;
     if (status === 'success') {
@@ -56,7 +53,7 @@ function VerifyEmail() {
         });
       }, 1000);
     }
-    return () => clearInterval(timer); // Limpa o timer se o componente desmontar
+    return () => clearInterval(timer); 
   }, [status, navigate]);
 
 

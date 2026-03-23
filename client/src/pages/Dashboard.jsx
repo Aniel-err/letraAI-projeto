@@ -91,7 +91,6 @@ function Dashboard() {
         formData.append('imagem', editFile);
 
         try {
-            // Remova o objeto de headers completamente
             await api.put(`/redacoes/${redacaoEditando}/imagem`, formData);
 
             setSuccessMsg("✅ Redação reenviada com sucesso!");
