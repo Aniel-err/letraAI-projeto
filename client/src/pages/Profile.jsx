@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Image, Alert, InputGroup, Spinner, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, InputGroup, Spinner, Badge } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -9,8 +9,6 @@ function Profile() {
   const [nome, setNome] = useState(user?.nome || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); 
-  const [avatar, setAvatar] = useState(null);
-  const [preview, setPreview] = useState(user?.avatar);
   
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
@@ -23,29 +21,11 @@ function Profile() {
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z"/><path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.828 2.829zm-4.79 1.499 1.123 1.123A13 13 0 0 1 1.172 8q.086-.13.195-.288c.335-.48.83-1.12 1.465-1.755A11 11 0 0 1 8 3.5c.579 0 1.146.083 1.683.238l.83.831A10 10 0 0 0 8 4.5c-2.12 0-3.879 1.168-5.168 2.457A13 13 0 0 0 1.172 8q.086.13.195.288c.335.48.83 1.12 1.465 1.755q.247.248.517.486z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>
   );
 
-  const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
-
-  const getFixedAvatarUrl = (url) => {
-    if (!url || url === 'null' || url === 'undefined') return defaultAvatar;
-    if (url.startsWith('blob:') || url.startsWith('data:')) return url; 
-    try {
-        const partes = url.replace(/\\/g, '/').split('/');
-        const nomeArquivo = partes[partes.length - 1];
-        if (!nomeArquivo || nomeArquivo === 'null') return defaultAvatar;
-        
-        const baseUrl = api.defaults.baseURL ? api.defaults.baseURL.replace(/\/api\/?$/, '') : 'http://localhost:3001';
-        return `${baseUrl}/uploads/${nomeArquivo}`;
-    } catch { 
-        return defaultAvatar; 
-    }
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        setAvatar(file);
-        setPreview(URL.createObjectURL(file)); 
-    }
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
   };
 
   const handleSubmit = async (e) => {
@@ -59,10 +39,6 @@ function Profile() {
     if (password && password.length >= 8) {
         formData.append('password', password);
     }
-    
-    if (avatar instanceof File) {
-        formData.append('avatar', avatar);
-    }
 
     try {
       const response = await api.put('/auth/profile', formData);
@@ -72,7 +48,6 @@ function Profile() {
 
       setMsg({ type: 'success', text: '✅ Perfil atualizado com sucesso!' });
       setPassword(''); 
-      setAvatar(null); 
     } catch (err) {
       console.error("Erro detalhado:", err.response?.data || err.message);
       setMsg({ type: 'danger', text: err.response?.data?.message || 'Erro ao atualizar perfil.' });
@@ -92,34 +67,13 @@ function Profile() {
             <Card.Body className="p-4">
               
               <div className="text-center mb-4">
-                <div className="position-relative d-inline-block">
-                    <Image 
-                        src={getFixedAvatarUrl(preview)} 
-                        roundedCircle 
-                        className="border border-3 border-primary shadow"
-                        width="130" 
-                        height="130"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                            e.currentTarget.onerror = null; 
-                            e.currentTarget.src = defaultAvatar;
-                        }}
-                    />
-                    <Form.Label 
-                        htmlFor="upload-avatar" 
-                        className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow-sm"
-                        style={{ cursor: 'pointer', right: '5px', bottom: '5px' }}
-                        title="Trocar Foto"
+                <div className="d-flex justify-content-center mb-3">
+                    <div 
+                        className="d-flex justify-content-center align-items-center bg-primary text-white fw-bold rounded-circle shadow"
+                        style={{ width: '130px', height: '130px', fontSize: '3rem' }}
                     >
-                        📸
-                    </Form.Label>
-                    <Form.Control 
-                        type="file" 
-                        id="upload-avatar" 
-                        className="d-none" 
-                        onChange={handleAvatarChange} 
-                        accept="image/*"
-                    />
+                        {getInitials(user?.nome)}
+                    </div>
                 </div>
                 <h5 className="mt-3 text-body fw-bold">{user?.email}</h5>
                 <Badge bg="info" text="dark" className="fs-6 px-3 py-2 rounded-pill text-uppercase">
