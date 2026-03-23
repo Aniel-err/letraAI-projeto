@@ -13,10 +13,6 @@ function Dashboard() {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
 
-    const [showImageModal, setShowImageModal] = useState(false);
-    const [selectedImage, setSelectedImage] = useState('');
-    const [selectedStudentName, setSelectedStudentName] = useState('');
-
     const [showEditModal, setShowEditModal] = useState(false);
     const [redacaoEditando, setRedacaoEditando] = useState(null);
     const [editFile, setEditFile] = useState(null);
@@ -25,17 +21,11 @@ function Dashboard() {
     const cameraEditRef = useRef(null);
     const galeriaEditRef = useRef(null);
 
-    const getFixedAvatarUrl = (url) => {
-        if (!url) return null;
-        if (url.startsWith('http')) return url; 
-        try {
-            const partes = url.replace(/\\/g, '/').split('/');
-            const nomeArquivo = partes[partes.length - 1];
-            const baseUrl = api.defaults.baseURL.replace(/\/api$/, '');
-            return `${baseUrl}/uploads/${nomeArquivo}`;
-        } catch {
-            return url;
-        }
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.substring(0, 2).toUpperCase();
     };
 
     const fetchRedacoes = useCallback(async () => {
@@ -55,13 +45,6 @@ function Dashboard() {
     useEffect(() => {
         fetchRedacoes();
     }, [fetchRedacoes]);
-
-    const handleViewStudentImage = (avatarUrl, nome) => {
-        if (!avatarUrl) return;
-        setSelectedImage(getFixedAvatarUrl(avatarUrl));
-        setSelectedStudentName(nome);
-        setShowImageModal(true);
-    };
 
     const abrirModalEdicao = (id) => {
         setRedacaoEditando(id);
@@ -161,20 +144,13 @@ function Dashboard() {
 
                                         {user.role === 'professor' && (
                                             <div className="d-flex align-items-center mt-2">
-                                                {r.User?.avatar ? (
-                                                    <img
-                                                        src={getFixedAvatarUrl(r.User.avatar)}
-                                                        className="rounded-circle me-2 border shadow-sm"
-                                                        width="35" height="35"
-                                                        style={{ objectFit: 'cover', cursor: 'pointer' }}
-                                                        alt="avatar"
-                                                        onClick={() => handleViewStudentImage(r.User.avatar, r.User.nome)}
-                                                    />
-                                                ) : (
-                                                    <div className="rounded-circle me-2 d-flex justify-content-center align-items-center bg-secondary text-white fw-bold shadow-sm" style={{ width: '35px', height: '35px' }}>
-                                                        {r.User?.nome ? r.User.nome.charAt(0).toUpperCase() : '?'}
-                                                    </div>
-                                                )}
+                                                <div 
+                                                    className="d-flex justify-content-center align-items-center bg-primary text-white fw-bold rounded-circle me-2 shadow-sm"
+                                                    style={{ width: '35px', height: '35px', fontSize: '14px' }}
+                                                    title={r.User?.nome}
+                                                >
+                                                    {getInitials(r.User?.nome)}
+                                                </div>
                                                 <strong className="text-body-secondary">{r.User?.nome}</strong>
                                             </div>
                                         )}
@@ -230,7 +206,7 @@ function Dashboard() {
 
                             {redacoes.length === 0 && (
                                 <div className="text-center p-5 bg-body-tertiary rounded mt-3">
-                                    <h5 className="text-body mb-0">Nenhuma redação registada no sistema ainda.</h5>
+                                    <h5 className="text-body mb-0">Nenhuma redação registrada no sistema ainda.</h5>
                                     <p className="text-body-secondary mt-2">Quando enviar uma redação, ela aparecerá aqui.</p>
                                 </div>
                             )}
@@ -264,7 +240,7 @@ function Dashboard() {
 
                             {editFile && (
                                 <Alert variant="success" className="text-center mt-3 text-body">
-                                    ✅ Novo ficheiro selecionado: <br /><strong>{editFile.name}</strong>
+                                    ✅ Novo arquivo selecionado: <br /><strong>{editFile.name}</strong>
                                 </Alert>
                             )}
                         </Form.Group>
@@ -273,13 +249,6 @@ function Dashboard() {
                             {editLoading ? <Spinner size="sm" /> : 'Confirmar Atualização'}
                         </Button>
                     </Form>
-                </Modal.Body>
-            </Modal>
-
-            <Modal show={showImageModal} onHide={() => setShowImageModal(false)} centered size="sm">
-                <Modal.Header closeButton className="border-0 pb-0 bg-body"><Modal.Title className="fw-bold text-body">{selectedStudentName}</Modal.Title></Modal.Header>
-                <Modal.Body className="text-center bg-body pt-2 pb-4">
-                    <img src={selectedImage} alt="Aluno" className="shadow" style={{ maxWidth: '100%', borderRadius: '50%', border: '4px solid var(--bs-body-bg)' }} />
                 </Modal.Body>
             </Modal>
         </Container>
