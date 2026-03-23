@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
 :root {
-  --app-bg: #f4f6f8;           
-  --app-text: #212529;       
+  --app-bg: #ffffff;          
+  --app-text: #212529;        
   --card-bg: #ffffff;          
   --input-bg: #ffffff;
-  --input-border: #ced4da;
-  --alert-info-bg: #cff4fc;    
-  --alert-info-text: #055160; 
+  --input-border: #dee2e6;    
+  --alert-info-bg: #e0f8fd;    
+  --alert-info-text: #055160;  
 }
 
 [data-bs-theme="dark"] {
@@ -15,28 +15,28 @@
   --app-text: #e0e0e0;         
   --card-bg: #1e1e1e;          
   --input-bg: #2b2b2b;
-  --input-border: #444;
-  --alert-info-bg: #032830;    
-  --alert-info-text: #6edff6;  
+  --input-border: #444444;
+  --alert-info-bg: #032830;
+  --alert-info-text: #6edff6;
 }
 
 body {
   background-color: var(--app-bg) !important;
   color: var(--app-text) !important;
-  transition: background-color 0.3s, color 0.3s;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease; 
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .card {
   background-color: var(--card-bg) !important;
   color: var(--app-text) !important;
-  border: none !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--input-border) !important; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 .card-header {
   border-bottom: 1px solid var(--input-border);
-  background-color: rgba(0,0,0,0.05) !important; 
+  background-color: transparent !important; 
   color: var(--app-text) !important;
 }
 
@@ -54,6 +54,7 @@ body {
 
 .form-control:focus {
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe !important;
   color: var(--app-text) !important;
 }
 
