@@ -128,7 +128,7 @@ function Register() {
 
             {error && <Alert variant="danger" className="py-2 small">{error}</Alert>}
 
-            <Button variant="primary" type="submit" className="w-100 mb-3 fw-bold py-2" size="lg" disabled={loading}>
+            <Button type="submit" className="btn-academico mb-3 py-2" size="lg" disabled={loading}>
               {loading ? <Spinner animation="border" size="sm" /> : 'Criar minha conta'}
             </Button>
           </Form>
