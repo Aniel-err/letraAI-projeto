@@ -16,11 +16,20 @@ function Login() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResend, setShowResend] = useState(false);
-
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+
+
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => setResendCooldown(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (location.state?.message) {
@@ -58,12 +67,14 @@ function Login() {
   };
 
   const handleResendVerification = async () => {
+    if (resendCooldown > 0) return;
     try {
       setSuccess('');
       setError('');
       await api.post('/auth/resend-verification', { email });
       setSuccess('Novo link de ativação enviado!');
       setShowResend(false);
+      setResendCooldown(60);
     } catch (err) {
       console.error(err);
       setError('Erro ao reenviar link. Tente novamente mais tarde.');
@@ -162,8 +173,14 @@ function Login() {
 
           {showResend && (
             <div className="d-grid mb-3">
-              <Button variant="outline-warning" size="sm" className="fw-bold" onClick={handleResendVerification}>
-                Reenviar E-mail de Ativação
+              <Button 
+                 variant="outline-warning" 
+                 size="sm" 
+                 className="fw-bold" 
+                 onClick={handleResendVerification}
+                 disabled={resendCooldown > 0}
+              >
+                {resendCooldown > 0 ? `Aguarde ${resendCooldown}s para reenviar` : 'Reenviar E-mail de Ativação'}
               </Button>
             </div>
           )}

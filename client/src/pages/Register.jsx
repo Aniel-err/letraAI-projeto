@@ -48,11 +48,11 @@ function Register() {
     try {
       await api.post('/auth/register', { nome, email, password, role });
 
-      navigate('/login', {
-        state: {
-          message: 'Cadastro realizado com sucesso! Verifique o link de ativação no terminal do seu servidor.',
-          emailPreenchido: email
-        }
+      navigate('/login', { 
+        state: { 
+          message: 'Cadastro realizado com sucesso! Um link de ativação foi enviado para o seu e-mail institucional.',
+          emailPreenchido: email 
+        } 
       });
 
     } catch (err) {
