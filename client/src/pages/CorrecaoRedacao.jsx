@@ -305,19 +305,32 @@ function CorrecaoRedacao() {
       </Modal>
 
       <Modal show={showEditorModal} onHide={() => setShowEditorModal(false)} fullscreen>
-        <Modal.Header closeButton className="bg-dark text-white border-bottom border-secondary d-flex align-items-center">
-          <Modal.Title className="fw-bold me-auto d-none d-md-block">
-              🔍 Visualização Ampliada
-          </Modal.Title>
+        
+        <Modal.Header className="bg-dark text-white border-bottom border-secondary d-flex align-items-center justify-content-between">
           
-          <div className="d-flex flex-wrap gap-2 align-items-center me-3">
-              <div className="d-flex align-items-center gap-1 bg-secondary px-2 py-1 rounded">
-                <Button variant="link" className="text-white text-decoration-none p-0 fs-5" onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))} title="Diminuir Zoom">➖</Button>
-                <span className="text-white fw-bold mx-2" style={{minWidth: '40px', textAlign: 'center'}}>{Math.round(zoomLevel * 100)}%</span>
-                <Button variant="link" className="text-white text-decoration-none p-0 fs-5" onClick={() => setZoomLevel(prev => prev + 0.25)} title="Aumentar Zoom">➕</Button>
-                <Button variant="outline-light" size="sm" className="ms-2" onClick={() => setZoomLevel(1)}>Reset</Button>
+          <div className="d-flex align-items-center">
+              <Button 
+                  variant="danger" 
+                  size="lg" 
+                  className="fw-bold me-3 shadow-sm" 
+                  onClick={() => setShowEditorModal(false)}
+              >
+                  &larr; Voltar para as Notas
+              </Button>
+              <Modal.Title className="fw-bold d-none d-lg-block ms-2">
+                  🔍 Leitura da Redação
+              </Modal.Title>
+          </div>
+          
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+              <div className="d-flex align-items-center gap-1 bg-secondary px-3 py-2 rounded shadow-sm">
+                <Button variant="link" className="text-white text-decoration-none p-0 fs-4" onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))} title="Diminuir Zoom">➖</Button>
+                <span className="text-white fw-bold mx-3 fs-5" style={{minWidth: '50px', textAlign: 'center'}}>{Math.round(zoomLevel * 100)}%</span>
+                <Button variant="link" className="text-white text-decoration-none p-0 fs-4" onClick={() => setZoomLevel(prev => prev + 0.25)} title="Aumentar Zoom">➕</Button>
+                <Button variant="outline-light" className="ms-3 fw-bold" onClick={() => setZoomLevel(1)}>Resetar Zoom</Button>
               </div>
           </div>
+
         </Modal.Header>
 
         <Modal.Body className="text-center bg-dark p-4 d-flex justify-content-center align-items-start" style={{ overflow: 'auto' }}>
@@ -330,7 +343,7 @@ function CorrecaoRedacao() {
                  height: 'auto',
                  maxWidth: '90%',
                  backgroundColor: '#fff',
-                 boxShadow: '0 0 15px rgba(0,0,0,0.5)'
+                 boxShadow: '0 0 25px rgba(0,0,0,0.8)'
              }}>
                  <img 
                    src={imagemSeguraUrl} 
