@@ -1,78 +1,125 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-/* --- CORES GLOBAIS E VARIÁVEIS --- */
-/* --- CORES GLOBAIS E VARIÁVEIS --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --app-bg: #f4f6f8;           /* Fundo Cinza Claro */
-  --app-text: #212529;         /* Texto Escuro */
-  --card-bg: #ffffff;          /* Cartão Branco */
-  --input-bg: #ffffff;
-  --input-border: #ced4da;
-  --alert-info-bg: #cff4fc;    /* Azul claro para alertas */
-  --alert-info-text: #055160;  /* Texto azul escuro */
+  --app-bg: #F8FAFC;          
+  --app-text: #334155;         
+  --card-bg: #FFFFFF;          
+  
+  --primary-color: #0F172A;   
+  --primary-hover: #1E293B;    
+  
+  --input-bg: #FFFFFF;
+  --input-border: #E2E8F0;
+  
+  --alert-info-bg: #EFF6FF;   
+  --alert-info-text: #1E3A8A; 
 }
 
 [data-bs-theme="dark"] {
-  --app-bg: #121212;           /* Fundo Preto */
-  --app-text: #e0e0e0;         /* Texto Claro */
-  --card-bg: #1e1e1e;          /* Cartão Cinza Escuro */
-  --input-bg: #2b2b2b;
-  --input-border: #444;
-  --alert-info-bg: #032830;    /* Azul muito escuro para alertas */
-  --alert-info-text: #6edff6;  /* Texto azul neon claro */
+  --app-bg: #0F172A;           
+  --app-text: #F8FAFC;        
+  --card-bg: #1E293B;         
+  
+  --primary-color: #3B82F6;    
+  --primary-hover: #60A5FA;
+  
+  --input-bg: #0F172A;
+  --input-border: #334155;
+  
+  --alert-info-bg: #1E3A8A;    
+  --alert-info-text: #DBEAFE;  
 }
 
-/* --- APLICAÇÃO GERAL --- */
 body {
   background-color: var(--app-bg) !important;
   color: var(--app-text) !important;
   transition: background-color 0.3s, color 0.3s;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
 }
 
-/* --- CARTÕES (CARDS) --- */
 .card {
   background-color: var(--card-bg) !important;
   color: var(--app-text) !important;
-  border: none !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--input-border) !important; 
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 8px !important;
 }
 
 .card-header {
   border-bottom: 1px solid var(--input-border);
-  background-color: rgba(0,0,0,0.05) !important; /* Levemente mais escuro que o card */
+  background-color: transparent !important; 
   color: var(--app-text) !important;
+  font-weight: 600;
 }
 
-/* --- ALERTA CUSTOMIZADO (Para corrigir o problema da imagem) --- */
-.alert-custom {
-  background-color: var(--card-bg);
-  border: 1px solid var(--input-border);
-  color: var(--app-text);
-}
-
-/* --- FORMULÁRIOS E INPUTS --- */
 .form-control, .form-select {
   background-color: var(--input-bg) !important;
   color: var(--app-text) !important;
   border-color: var(--input-border) !important;
+  border-radius: 6px !important;
 }
 
 .form-control:focus {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1) !important;
   color: var(--app-text) !important;
 }
 
 ::placeholder {
-  color: #adb5bd !important;
+  color: #94A3B8 !important;
   opacity: 1;
 }
 
-/* --- BOTÕES --- */
-.btn-primary, .btn-success, .btn-danger {
-  color: #fff !important; 
+
+
+.btn-academico {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 10px 24px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease-in-out !important;
+  
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto; 
+  display: block;
 }
 
-/* --- MODO ESCURO ESPECÍFICO --- */
-[data-bs-theme="dark"] .border {
-    border-color: #444 !important;
+.btn-academico:hover {
+  background-color: var(--primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+.btn-academico-outline {
+  background-color: transparent !important;
+  color: var(--primary-color) !important;
+  border: 1px solid var(--primary-color) !important;
+  padding: 10px 24px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease-in-out !important;
+  
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  display: block;
+}
+
+.btn-academico-outline:hover {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .btn-academico-outline {
+    border-color: var(--input-border) !important;
+    color: var(--app-text) !important;
+}
+[data-bs-theme="dark"] .btn-academico-outline:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.w-100.btn {
+   max-width: 320px !important;
+   margin-left: auto !important;
+   margin-right: auto !important;
 }
