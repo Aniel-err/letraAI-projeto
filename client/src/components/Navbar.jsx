@@ -34,7 +34,7 @@ function AppNavbar() {
   return (
     <Navbar expand="lg" className="shadow-sm mb-4" style={{ backgroundColor: 'var(--card-bg)' }}>
       <Container>
-        <Navbar.Brand as={Link} to="/dashboard" className="fw-bold text-dark" style={{ fontSize: '1.5rem' }}>
+        <Navbar.Brand as={Link} to="/dashboard" className="fw-bold text-primary" style={{ fontSize: '1.5rem' }}>
           LetraAi ✍️
         </Navbar.Brand>
         
