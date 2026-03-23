@@ -1,6 +1,6 @@
 export default (sequelize, DataTypes) => {
   const Redacao = sequelize.define('Redacao', {
-    imagemUrl: { type: DataTypes.STRING },
+    imagemUrl: { type: DataTypes.TEXT },
     status: { type: DataTypes.STRING, defaultValue: 'Enviada' },
     
     notaC1: { type: DataTypes.INTEGER },
