@@ -4,7 +4,13 @@ import crypto from 'crypto';
 
 const { Redacao, User, Turma, Proposta } = db;
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+});
 
 const uploadBase64ToS3 = async (base64String) => {
     const base64Data = Buffer.from(base64String.replace(/^data:image\/\w+;base64,/, ""), 'base64');
