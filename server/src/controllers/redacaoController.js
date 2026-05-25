@@ -2,7 +2,7 @@ import db from '../models/index.js';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 
-const { Redacao, User, Turma, Proposta } = db;
+const { Redacao, User, Turma, Proposta, Notificacao } = db;
 
 const s3Client = new S3Client({
     region: process.env.AWS_REGION || 'us-east-1',
@@ -84,6 +84,20 @@ export const createRedacao = async (req, res) => {
         const novaRedacao = await Redacao.create({
             userId, turmaId, propostaId, imagemUrl, status: 'Enviada'
         });
+
+        const proposta = propostaId ? await Proposta.findByPk(propostaId, { attributes: ['titulo', 'turmaId'] }) : null;
+        const turmaReferenciaId = turmaId || proposta?.turmaId;
+        const turma = turmaReferenciaId ? await Turma.findByPk(turmaReferenciaId, { attributes: ['professorId'] }) : null;
+
+        if (turma?.professorId) {
+            await Notificacao.create({
+                userId: turma.professorId,
+                redacaoId: novaRedacao.id,
+                mensagem: `O aluno ${req.userData.nome || 'Aluno'} enviou a redação ${proposta?.titulo || 'Tema Livre'} para correção`,
+                lida: false
+            });
+        }
+
         res.status(201).json(novaRedacao);
     } catch (error) {
         console.error("Erro upload S3:", error.message);
@@ -149,6 +163,7 @@ export const corrigirRedacao = async (req, res) => {
         redacao.notaTotal = req.body.total;
         redacao.itensAnulatorios = itensAnulatoriosParsed;
         redacao.descricoes = descricoesParsed;
+        const statusAnterior = redacao.status;
         redacao.status = req.body.status || 'Corrigida';
 
         if (req.body.imagemBase64) {
@@ -158,6 +173,16 @@ export const corrigirRedacao = async (req, res) => {
         }
 
         await redacao.save();
+
+        if (statusAnterior !== 'Corrigida' && redacao.status === 'Corrigida') {
+            await Notificacao.create({
+                userId: redacao.userId,
+                redacaoId: redacao.id,
+                mensagem: `Sua redação foi corrigida!`,
+                lida: false
+            });
+        }
+
         res.status(200).json({ message: 'Correção salva!', redacao });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao salvar.' });

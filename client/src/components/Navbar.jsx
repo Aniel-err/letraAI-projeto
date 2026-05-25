@@ -3,6 +3,7 @@ import { Navbar, Container, Nav, Dropdown, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import NotificationBell from './NotificationBell';
 
 function AppNavbar() {
   const { user, logout } = useAuth();
@@ -43,6 +44,10 @@ function AppNavbar() {
           <hr className="d-lg-none text-secondary" />
 
           <Nav className="align-items-start align-items-lg-center gap-3 mt-2 mt-lg-0">
+            <div className="d-flex align-items-center gap-2">
+                <NotificationBell />
+                <span className="d-lg-none fw-bold text-body-secondary ms-2">Notificações</span>
+            </div>
             <div className="d-flex align-items-center gap-2">
                 <Button 
                     variant={theme === 'light' ? 'outline-dark' : 'outline-light'} 
