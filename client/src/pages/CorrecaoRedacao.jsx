@@ -45,6 +45,7 @@ function CorrecaoRedacao() {
 
   const [imagemSeguraUrl, setImagemSeguraUrl] = useState('');
   const [imagemCarregando, setImagemCarregando] = useState(true);
+  const [rotacaoImagem, setRotacaoImagem] = useState(0);
 
   const [showEditorModal, setShowEditorModal] = useState(false);
 
@@ -110,6 +111,7 @@ function CorrecaoRedacao() {
   const handleAdicionarDescricao = () => setDescricoes(prev => [...prev, { id: Date.now(), texto: '' }]);
   const handleDescricaoChange = (id, novoTexto) => setDescricoes(prev => prev.map(d => d.id === id ? { ...d, texto: novoTexto } : d));
   const handleRemoverDescricao = (id) => setDescricoes(prev => prev.filter(d => d.id !== id));
+  const handleRotacionarImagem = () => setRotacaoImagem(prev => (prev + 90) % 360);
 
   const handleToggleAnulacao = (e) => {
     const checked = e.target.checked;
@@ -166,6 +168,16 @@ function CorrecaoRedacao() {
   const anulatoriosAtuais = isAnulada ? [motivoSelecionado] : (redacao.itensAnulatorios || []);
   const estaAnulada = anulatoriosAtuais.length > 0 && anulatoriosAtuais[0] !== "";
   const notaExibida = estaAnulada ? 0 : total;
+  const imagemRotacionadaLateral = rotacaoImagem % 180 !== 0;
+  const estiloImagemRedacao = {
+    maxHeight: imagemRotacionadaLateral ? 'min(70vw, 800px)' : '800px',
+    maxWidth: imagemRotacionadaLateral ? '70vh' : '100%',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    transform: `rotate(${rotacaoImagem}deg)`,
+    transformOrigin: 'center center',
+    transition: 'transform 0.25s ease, max-height 0.25s ease, max-width 0.25s ease',
+    margin: imagemRotacionadaLateral ? '120px 0' : 0
+  };
 
   return (
     <Container fluid className="p-4">
@@ -188,11 +200,18 @@ function CorrecaoRedacao() {
                       ⚠️ Imagem editada pelo aluno em: <br className="d-md-none" /> {new Date(redacao.editedAt).toLocaleString()}
                   </Badge>
               )}
+              {imagemSeguraUrl && (
+                  <div className="mt-3">
+                      <Button variant="outline-primary" size="sm" className="fw-bold" onClick={handleRotacionarImagem}>
+                          🔄 Rotacionar Imagem
+                      </Button>
+                  </div>
+              )}
             </Card.Header>
 
             <Card.Body 
                 style={{ minHeight: '600px', backgroundColor: 'var(--bs-tertiary-bg)', textAlign: 'center', cursor: 'zoom-in' }} 
-                className="d-flex flex-column align-items-center justify-content-center p-0 overflow-hidden"
+                className="d-flex flex-column align-items-center justify-content-center p-3 overflow-auto"
                 onClick={() => { setZoomLevel(1); setShowEditorModal(true); }}
                 title="Clique para abrir a Lupa"
             >
@@ -202,7 +221,7 @@ function CorrecaoRedacao() {
                   <Image 
                     src={imagemSeguraUrl} 
                     fluid 
-                    style={{ maxHeight: '800px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} 
+                    style={estiloImagemRedacao} 
                   />
               ) : (
                   <Alert variant="danger" className="m-4">Não foi possível carregar a imagem.</Alert>
@@ -328,6 +347,7 @@ function CorrecaoRedacao() {
                 <span className="text-white fw-bold mx-3 fs-5" style={{minWidth: '50px', textAlign: 'center'}}>{Math.round(zoomLevel * 100)}%</span>
                 <Button variant="link" className="text-white text-decoration-none p-0 fs-4" onClick={() => setZoomLevel(prev => prev + 0.25)} title="Aumentar Zoom">➕</Button>
                 <Button variant="outline-light" className="ms-3 fw-bold" onClick={() => setZoomLevel(1)}>Resetar Zoom</Button>
+                <Button variant="outline-light" className="ms-2 fw-bold" onClick={handleRotacionarImagem}>🔄 Girar</Button>
               </div>
           </div>
 
@@ -348,7 +368,15 @@ function CorrecaoRedacao() {
                  <img 
                    src={imagemSeguraUrl} 
                    alt="Redação Ampliada" 
-                   style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                   style={{
+                     width: '100%',
+                     height: '100%',
+                     objectFit: 'contain',
+                     transform: `rotate(${rotacaoImagem}deg)`,
+                     transformOrigin: 'center center',
+                     transition: 'transform 0.25s ease',
+                     margin: imagemRotacionadaLateral ? '120px 0' : 0
+                   }} 
                  />
              </div>
            )}

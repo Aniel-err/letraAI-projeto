@@ -10,6 +10,7 @@ import authRoutes from './src/routes/authRoutes.js';
 import redacaoRoutes from './src/routes/redacaoRoutes.js';
 import turmaRoutes from './src/routes/turmaRoutes.js';
 import propostaRoutes from './src/routes/propostaRoutes.js';
+import notificacaoRoutes from './src/routes/notificacaoRoutes.js';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/redacoes', redacaoRoutes);
 app.use('/api/turmas', turmaRoutes);
 app.use('/api/propostas', propostaRoutes);
+app.use('/api/notificacoes', notificacaoRoutes);
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend LetrAI Online!' });
